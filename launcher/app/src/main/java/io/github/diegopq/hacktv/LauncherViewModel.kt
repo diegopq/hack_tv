@@ -5,6 +5,10 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.media.tv.TvInputInfo
+import android.media.tv.TvInputManager
+import android.os.Handler
+import android.os.Looper
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -52,9 +56,22 @@ class LauncherViewModel(application: Application) : AndroidViewModel(application
         override fun onReceive(context: Context?, intent: Intent?) = refreshApps()
     }
 
+    /**
+     * After a reboot the launcher starts before the TV has registered its HDMI inputs, so the first list
+     * is empty. The TV announces each input as it comes up; the list follows those announcements.
+     */
+    private val inputCallback = object : TvInputManager.TvInputCallback() {
+        override fun onInputAdded(inputId: String) = refreshInputs()
+        override fun onInputRemoved(inputId: String) = refreshInputs()
+        override fun onInputUpdated(inputId: String) = refreshInputs()
+        override fun onTvInputInfoUpdated(inputInfo: TvInputInfo) = refreshInputs()
+    }
+    private val tvInputs: TvInputManager? = application.getSystemService(TvInputManager::class.java)
+
     init {
         refreshApps()
         refreshInputs()
+        runCatching { tvInputs?.registerCallback(inputCallback, Handler(Looper.getMainLooper())) }
         val filter = IntentFilter().apply {
             addAction(Intent.ACTION_PACKAGE_ADDED)
             addAction(Intent.ACTION_PACKAGE_REMOVED)
@@ -135,6 +152,7 @@ class LauncherViewModel(application: Application) : AndroidViewModel(application
     }
 
     override fun onCleared() {
+        runCatching { tvInputs?.unregisterCallback(inputCallback) }
         getApplication<Application>().unregisterReceiver(packageReceiver)
     }
 }
