@@ -1,0 +1,517 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Launcher TV · Maqueta</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#07080b; --text:#f4f5f7; --muted:rgba(244,245,247,.68); --faint:rgba(244,245,247,.42);
+  --glass:rgba(255,255,255,.09); --glass-2:rgba(255,255,255,.16); --line:rgba(255,255,255,.14);
+  --ease:cubic-bezier(.2,.8,.2,1); --pad:120px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:#000;overflow:hidden}
+body{font-family:Inter,system-ui,-apple-system,sans-serif;color:var(--text);-webkit-font-smoothing:antialiased}
+#stage{position:absolute;left:50%;top:50%;width:1920px;height:1080px;transform-origin:center;overflow:hidden;background:var(--bg)}
+
+/* Fondo: imagen de la recomendación o color de la app */
+.bd{position:absolute;inset:0;opacity:0;transition:opacity .9s ease;background-size:cover;background-position:center right;background-repeat:no-repeat}
+.bd.on{opacity:1}
+.grain{position:absolute;inset:0;opacity:.07;mix-blend-mode:overlay;pointer-events:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+.scrim{position:absolute;inset:0;pointer-events:none;
+  background:
+    linear-gradient(90deg,rgba(7,8,11,.94) 0%,rgba(7,8,11,.72) 30%,rgba(7,8,11,.15) 62%,rgba(7,8,11,0) 80%),
+    linear-gradient(0deg,rgba(7,8,11,1) 0%,rgba(7,8,11,.85) 30%,rgba(7,8,11,0) 58%),
+    linear-gradient(180deg,rgba(7,8,11,.7) 0%,rgba(7,8,11,0) 20%)}
+
+/* Barra superior */
+header{position:absolute;z-index:10;top:0;left:0;right:0;height:150px;padding:0 var(--pad);
+  display:grid;grid-template-columns:1fr auto 1fr;align-items:center}
+.left{justify-self:start}
+.right{justify-self:end;display:flex;align-items:center;gap:30px}
+.pill{display:flex;align-items:center;gap:6px;height:76px;padding:0 9px;border-radius:38px;
+  background:var(--glass);border:1px solid var(--line);backdrop-filter:blur(24px) saturate(140%)}
+.chip{height:58px;padding:0 30px;border-radius:29px;display:flex;align-items:center;gap:12px;
+  font-size:25px;font-weight:600;color:var(--muted);transition:background .2s,color .2s,transform .2s var(--ease)}
+.chip svg{width:28px;height:28px}
+.chip.active{color:#fff;background:var(--glass-2)}
+.chip.focus{background:#fff;color:#0a0a0a;transform:scale(1.06)}
+.status{display:flex;gap:16px;color:var(--muted)}
+.status svg{width:30px;height:30px}
+.clock{text-align:right;line-height:1.15}
+.clock b{display:block;font-size:34px;font-weight:700;letter-spacing:-.01em}
+.clock span{font-size:19px;color:var(--muted)}
+
+/* Vistas */
+.view{position:absolute;inset:0;opacity:0;visibility:hidden;transition:opacity .35s ease,visibility 0s .35s}
+.view.on{opacity:1;visibility:visible;transition:opacity .35s ease}
+
+/* Inicio */
+.scroller{position:absolute;left:0;right:0;top:0;transition:transform .5s var(--ease)}
+.hero{position:relative;height:690px;padding:196px var(--pad) 0;transition:opacity .4s ease}
+.hcopy{max-width:880px;transition:opacity .2s ease,transform .2s ease}
+.hcopy.out{opacity:0;transform:translateY(10px)}
+.prov{display:flex;align-items:center;gap:16px;font-size:21px;font-weight:600;color:var(--muted)}
+.mini{flex:none;display:inline-grid;place-items:center;width:96px;height:54px;border-radius:10px;overflow:hidden;
+  font-size:5.5px;box-shadow:0 6px 16px rgba(0,0,0,.4),inset 0 0 0 1px rgba(255,255,255,.12)}
+.hero h1{font-size:92px;font-weight:800;letter-spacing:-.035em;line-height:1.02;margin-top:18px}
+.meta{font-size:22px;font-weight:500;color:var(--muted);margin-top:14px}
+.hero p{font-size:26px;line-height:1.42;color:var(--muted);max-width:760px;margin-top:14px;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.btns{display:flex;gap:20px;margin-top:32px}
+.btn{height:74px;padding:0 40px 0 32px;border-radius:37px;display:flex;align-items:center;gap:14px;
+  font-size:26px;font-weight:700;background:var(--glass-2);border:1px solid var(--line);
+  transition:transform .2s var(--ease),box-shadow .2s}
+.btn svg{width:28px;height:28px}
+.btn.primary{background:#fff;color:#0a0a0a;border-color:#fff}
+.btn.focus{transform:scale(1.07);box-shadow:0 0 0 4px var(--bg),0 0 0 8px #fff,0 18px 40px rgba(0,0,0,.45)}
+.dots{display:flex;gap:10px;margin-top:30px}
+.dot{width:10px;height:10px;border-radius:5px;background:rgba(255,255,255,.3);transition:width .35s var(--ease),background .35s}
+.dot.on{width:36px;background:#fff}
+.chev{position:absolute;top:330px;width:60px;height:60px;border-radius:50%;display:grid;place-items:center;
+  background:var(--glass);border:1px solid var(--line);opacity:0;transition:opacity .25s}
+.chev svg{width:30px;height:30px}
+.chev.l{left:36px}.chev.r{right:36px}
+.hero:has(.btn.focus) .chev{opacity:1}
+
+.row{padding:0 var(--pad);margin-bottom:58px;transition:opacity .35s ease}
+.row h2{font-size:28px;font-weight:700;margin-bottom:24px;display:flex;align-items:baseline;gap:16px}
+.row h2 small{font-size:20px;font-weight:500;color:var(--faint)}
+.track{position:relative;display:flex;gap:30px;transition:transform .45s var(--ease)}
+
+/* Mosaicos */
+.tile{flex:none;width:312px;height:176px;border-radius:20px;position:relative;overflow:hidden;
+  display:grid;place-items:center;font-size:18px;
+  box-shadow:0 12px 30px rgba(0,0,0,.35),inset 0 0 0 1px rgba(255,255,255,.07);
+  transition:transform .25s var(--ease),box-shadow .25s}
+.tile::after{content:"";position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(155deg,rgba(255,255,255,.24) 0%,rgba(255,255,255,0) 38%);opacity:0;transition:opacity .25s}
+.tile.focus{transform:scale(1.1);z-index:3;box-shadow:0 0 0 4px #fff,0 26px 60px rgba(0,0,0,.6)}
+.tile.focus::after{opacity:1}
+.tile.glass{background:rgba(255,255,255,.075);backdrop-filter:blur(18px);display:flex;flex-direction:column;
+  justify-content:flex-end;align-items:flex-start;padding:22px 26px}
+.tile.glass svg{position:absolute;top:24px;left:26px;width:42px;height:42px;color:#fff;opacity:.9}
+.tile.glass .t{font-size:25px;font-weight:700}
+.tile.glass .s{font-size:18px;color:var(--muted);margin-top:4px}
+
+/* Reproducido recientemente */
+.tile.media{display:block;width:400px;height:225px;background-size:cover;background-position:center}
+.tile.media::before{content:"";position:absolute;inset:0;background:linear-gradient(0deg,rgba(0,0,0,.88) 0%,rgba(0,0,0,.35) 45%,rgba(0,0,0,0) 70%)}
+.tile.media .mini{position:absolute;top:14px;right:14px;width:72px;height:40px;font-size:4.15px;border-radius:8px}
+.minfo{position:absolute;left:22px;right:22px;bottom:30px}
+.minfo .t{font-size:24px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.minfo .s{font-size:17px;color:var(--muted);margin-top:4px}
+.prog{position:absolute;left:22px;right:22px;bottom:16px;height:5px;border-radius:3px;background:rgba(255,255,255,.25);overflow:hidden}
+.prog i{display:block;height:100%;background:#fff;border-radius:3px}
+
+/* Logotipos aproximados (en la app real se usa el banner de cada app) */
+.lg-netflix{font-family:'Bebas Neue',Impact,sans-serif;color:#e50914;font-size:4.4em;letter-spacing:.04em;line-height:1}
+.lg-yt{display:flex;align-items:center;gap:.3em;font-size:2.4em;font-weight:700;letter-spacing:-.045em;color:#fff}
+.lg-yt i{width:1.42em;height:1em;border-radius:.28em;background:#ff0033;position:relative}
+.lg-yt i::after{content:"";position:absolute;left:.54em;top:.28em;border-left:.42em solid #fff;border-top:.22em solid transparent;border-bottom:.22em solid transparent}
+.lg-prime{font-size:2.5em;font-weight:700;color:#fff;letter-spacing:-.02em;line-height:1;text-align:center}
+.lg-prime b{display:block;width:2.2em;height:.36em;margin:.02em 0 0 .3em;border-bottom:.11em solid #00a8e1;border-radius:0 0 60% 60%/0 0 100% 100%}
+.lg-disney{font-family:Georgia,'Times New Roman',serif;font-style:italic;font-size:3.1em;font-weight:700;color:#fff;letter-spacing:-.03em}
+.lg-disney sup{font-family:Inter,sans-serif;font-style:normal;font-size:.6em;margin-left:.05em}
+.lg-max{font-size:4.2em;font-weight:800;color:#fff;letter-spacing:-.06em;line-height:1}
+.lg-spotify{display:flex;align-items:center;gap:.3em;font-size:2.5em;font-weight:800;color:#fff;letter-spacing:-.035em}
+.lg-spotify i{width:1.1em;height:1.1em;border-radius:50%;background:#1ed760}
+.lg-vix{font-size:4.2em;font-weight:800;color:#fff;letter-spacing:-.03em}
+.lg-plex{font-size:3.6em;font-weight:800;color:#fff;letter-spacing:-.03em}
+.lg-plex span{color:#e5a00d}
+.lg-word{font-size:2.5em;font-weight:800;letter-spacing:-.03em;color:#fff}
+.lg-play{display:flex;align-items:center;gap:.35em;font-size:2.2em;font-weight:700;color:#fff;letter-spacing:-.02em}
+.lg-play i{width:1.05em;height:1.18em;clip-path:polygon(0 0,100% 50%,0 100%);
+  background:conic-gradient(from 200deg at 35% 50%,#00d7fe,#00f076,#ffd500,#ff3a44,#00d7fe)}
+
+/* Páginas Apps y Ajustes */
+.page h1{position:absolute;left:var(--pad);top:186px;font-size:58px;font-weight:800;letter-spacing:-.025em}
+.page .sub{position:absolute;left:var(--pad);top:262px;font-size:22px;color:var(--muted)}
+.clip{position:absolute;left:0;right:0;top:318px;bottom:0;overflow:hidden;padding:30px var(--pad) 0;
+  -webkit-mask-image:linear-gradient(180deg,transparent 0,#000 30px,#000 calc(100% - 60px),transparent);
+          mask-image:linear-gradient(180deg,transparent 0,#000 30px,#000 calc(100% - 60px),transparent)}
+.slide{position:relative;transition:transform .45s var(--ease)}
+.grid{position:relative;display:grid;grid-template-columns:repeat(6,1fr);gap:50px 30px}
+.grid .tile{width:100%;height:auto;aspect-ratio:16/9;font-size:15px}
+.cell .name{font-size:20px;font-weight:600;color:var(--faint);margin-top:16px;transition:color .2s}
+.cell:has(.tile.focus) .name{color:#fff}
+.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:30px}
+.cards .tile{width:100%;height:220px}
+
+/* Aviso, ayuda y créditos */
+.toast{position:absolute;z-index:30;left:50%;bottom:96px;transform:translate(-50%,30px);opacity:0;
+  padding:20px 36px;border-radius:40px;background:rgba(20,22,26,.9);border:1px solid var(--line);
+  backdrop-filter:blur(20px);font-size:24px;font-weight:600;transition:.3s var(--ease);pointer-events:none}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+.hint{position:absolute;z-index:20;right:28px;bottom:22px;display:flex;gap:22px;padding:12px 20px;border-radius:16px;
+  background:rgba(0,0,0,.6);font-size:16px;color:var(--faint);transition:opacity .3s}
+.hint.off{opacity:0}
+.hint kbd{font-family:inherit;font-weight:700;color:var(--muted);padding:2px 8px;border-radius:6px;border:1px solid var(--line);margin-right:7px}
+.credit{position:absolute;z-index:20;left:28px;bottom:22px;font-size:14px;color:rgba(255,255,255,.3)}
+</style>
+</head>
+<body>
+<div id="stage">
+  <div class="bd" id="bd0"></div><div class="bd" id="bd1"></div>
+  <div class="grain"></div>
+  <div class="scrim"></div>
+
+  <header>
+    <div class="left"><div class="pill"><div class="chip" data-f data-act="search" id="c-search"></div></div></div>
+    <nav class="pill">
+      <div class="chip active" data-f data-tab="home">Inicio</div>
+      <div class="chip" data-f data-tab="apps">Apps</div>
+      <div class="chip" data-f data-tab="settings">Ajustes</div>
+    </nav>
+    <div class="right">
+      <div class="status" id="status"></div>
+      <div class="clock"><b id="time"></b><span id="date"></span></div>
+    </div>
+  </header>
+
+  <section class="view on" id="v-home">
+    <div class="scroller" id="scroller">
+      <div class="hero" id="hero">
+        <div class="hcopy" id="hcopy">
+          <div class="prov" id="h-prov"></div>
+          <h1 id="h-title"></h1>
+          <div class="meta" id="h-meta"></div>
+          <p id="h-desc"></p>
+        </div>
+        <div class="btns">
+          <div class="btn primary" data-f data-row="hero" data-act="watch" id="b-watch"></div>
+          <div class="btn" data-f data-row="hero" data-act="info" id="b-info"></div>
+        </div>
+        <div class="dots" id="dots"></div>
+        <div class="chev l" id="chev-l"></div><div class="chev r" id="chev-r"></div>
+      </div>
+      <div class="rows" id="rows">
+        <div class="row"><h2>Mis apps <small>Mantén OK para reordenar</small></h2><div class="track" id="t-apps"></div></div>
+        <div class="row"><h2>Reproducido recientemente <small>Desde tus apps</small></h2><div class="track" id="t-recent"></div></div>
+        <div class="row"><h2>Entradas</h2><div class="track" id="t-inputs"></div></div>
+        <div class="row"><h2>Sistema</h2><div class="track" id="t-system"></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="view page" id="v-apps">
+    <h1>Todas las apps</h1><div class="sub" id="apps-count"></div>
+    <div class="clip"><div class="slide" id="slide-apps"><div class="grid" id="grid"></div></div></div>
+  </section>
+
+  <section class="view page" id="v-settings">
+    <h1>Ajustes</h1><div class="sub">Accesos directos a la configuración de la TV</div>
+    <div class="clip"><div class="slide"><div class="cards" id="cards"></div></div></div>
+  </section>
+
+  <div class="toast" id="toast"></div>
+  <div class="credit">Imágenes de muestra: TVmaze (CC BY-SA)</div>
+  <div class="hint" id="hint">
+    <span><kbd>← ↑ ↓ →</kbd>Navegar</span><span><kbd>← →</kbd>en los botones: otra recomendación</span><span><kbd>Enter</kbd>Abrir</span><span><kbd>Esc</kbd>Atrás</span>
+    <span><kbd>A</kbd>Botón apps</span><span><kbd>S</kbd>Botón ajustes</span><span><kbd>H</kbd>Ayuda</span>
+  </div>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+const svg = p => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
+const ICON = {
+  search: svg('<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>'),
+  wifi: svg('<path d="M2 8.5a15 15 0 0 1 20 0"/><path d="M5 12a10 10 0 0 1 14 0"/><path d="M8.5 15.5a5 5 0 0 1 7 0"/><path d="M12 19h.01"/>'),
+  play: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4.5v15l13-7.5z"/></svg>',
+  info: svg('<circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/>'),
+  left: svg('<path d="m15 5-7 7 7 7"/>'), right: svg('<path d="m9 5 7 7-7 7"/>'),
+  hdmi: svg('<path d="M3 8h18v4l-2.5 3h-13L3 12z"/><path d="M7 11h10"/>'),
+  sliders: svg('<path d="M4 6h9M19 6h1M4 12h3M13 12h7M4 18h11M21 18h-1"/><circle cx="16" cy="6" r="2.5"/><circle cx="10" cy="12" r="2.5"/><circle cx="18" cy="18" r="2.5"/>'),
+  display: svg('<rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 21h8M12 17v4"/>'),
+  sound: svg('<path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/>'),
+  remote: svg('<rect x="7" y="2" width="10" height="20" rx="4"/><circle cx="12" cy="8" r="2"/><path d="M10 14h.01M14 14h.01M10 17h.01M14 17h.01"/>'),
+  sparkle: svg('<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/><path d="M19 16l.6 1.6 1.6.6-1.6.6L19 20.4l-.6-1.6-1.6-.6 1.6-.6z"/>'),
+  apps: svg('<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>'),
+  storage: svg('<ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/>'),
+};
+
+const APPS = [
+  {id:'netflix', name:'Netflix', bg:'#000', a:'#b0060f', b:'#3a0004', logo:'<span class="lg-netflix">NETFLIX</span>'},
+  {id:'youtube', name:'YouTube', bg:'#0f0f0f', a:'#b80d17', b:'#2a0909', logo:'<span class="lg-yt"><i></i>YouTube</span>'},
+  {id:'prime', name:'Prime Video', bg:'linear-gradient(135deg,#0f171e,#1b3a52)', a:'#0a6f99', b:'#06222f', logo:'<span class="lg-prime">prime video<b></b></span>'},
+  {id:'disney', name:'Disney+', bg:'linear-gradient(135deg,#0b1340,#1c3fa8)', a:'#1d3fb8', b:'#0a1240', logo:'<span class="lg-disney">Disney<sup>+</sup></span>'},
+  {id:'max', name:'Max', bg:'linear-gradient(135deg,#0021f3,#000a5a)', a:'#0d2be0', b:'#020a40', logo:'<span class="lg-max">max</span>'},
+  {id:'vix', name:'ViX', bg:'linear-gradient(135deg,#ff6a13,#d9300b)', a:'#d9480f', b:'#3a1205', logo:'<span class="lg-vix">ViX</span>'},
+  {id:'spotify', name:'Spotify', bg:'#121212', a:'#14833c', b:'#0b2a16', logo:'<span class="lg-spotify"><i></i>Spotify</span>'},
+  {id:'plex', name:'Plex', bg:'#1f2326', a:'#a8740a', b:'#2a1e04', logo:'<span class="lg-plex">ple<span>x</span></span>'},
+  {id:'play', name:'Play Store', bg:'#1b1c20', a:'#1a5fc8', b:'#0b3a20', logo:'<span class="lg-play"><i></i>Play Store</span>'},
+  {id:'crunchy', name:'Crunchyroll', bg:'#f47521', a:'#c95a12', b:'#3a1a05', logo:'<span class="lg-word">crunchyroll</span>'},
+  {id:'twitch', name:'Twitch', bg:'#9146ff', a:'#6a2fd1', b:'#1e0c40', logo:'<span class="lg-word" style="font-size:3.2em">twitch</span>'},
+  {id:'pluto', name:'Pluto TV', bg:'#fff200', a:'#9a9100', b:'#2a2700', logo:'<span class="lg-word" style="color:#111">pluto tv</span>'},
+  {id:'para', name:'Paramount+', bg:'linear-gradient(135deg,#0064ff,#002a8f)', a:'#0050d0', b:'#001540', logo:'<span class="lg-word" style="font-weight:700">Paramount+</span>'},
+  {id:'kodi', name:'Kodi', bg:'linear-gradient(135deg,#17b2e7,#0b5d82)', a:'#0f86b0', b:'#05263a', logo:'<span class="lg-word" style="font-size:3em">kodi</span>'},
+  {id:'ytm', name:'YouTube Music', bg:'#0f0f0f', a:'#a80c14', b:'#200606', logo:'<span class="lg-word" style="font-size:2.1em">YouTube Music</span>'},
+  {id:'files', name:'Archivos', bg:'linear-gradient(135deg,#2b3440,#161b22)', a:'#3a4a5c', b:'#10161d', logo:'<span class="lg-word" style="font-size:2.3em">Archivos</span>'},
+];
+const FAV = ['netflix','youtube','prime','disney','max','vix','spotify','plex','play'];
+const IMG = id => `https://static.tvmaze.com/uploads/images/original_untouched/${id}.jpg`;
+
+/* Contenido de muestra. En la app real viene de TMDB, filtrado por las apps instaladas y región México. */
+const SHOWS = {
+  stranger:{title:'Stranger Things', app:'netflix', year:2016, genres:'Drama, Terror, Ciencia ficción', img:IMG('410/1025588'),
+    desc:'En Hawkins, un grupo de amigos enfrenta fuerzas sobrenaturales y experimentos secretos tras la desaparición de un niño.'},
+  wednesday:{title:'Merlina', app:'netflix', year:2022, genres:'Comedia, Misterio', img:IMG('486/1215632'),
+    desc:'Merlina Addams llega a la Academia Nevermore y queda envuelta en una serie de asesinatos que sacude al pueblo.'},
+  squid:{title:'El juego del calamar', app:'netflix', year:2021, genres:'Drama, Suspenso', img:IMG('355/889191'),
+    desc:'Cientos de personas endeudadas aceptan competir en juegos infantiles por un premio millonario, con consecuencias mortales.'},
+  boys:{title:'The Boys', app:'prime', year:2019, genres:'Acción, Fantasía', img:IMG('265/664986'),
+    desc:'Un grupo de vigilantes se propone exponer a los superhéroes corruptos que abusan de sus poderes.'},
+  reacher:{title:'Reacher', app:'prime', year:2022, genres:'Acción, Suspenso', img:IMG('557/1392930'),
+    desc:'Jack Reacher, exinvestigador de la policía militar, llega a un pueblo y queda atrapado en una conspiración.'},
+  mando:{title:'The Mandalorian', app:'disney', year:2019, genres:'Acción, Aventura', img:IMG('280/701367'),
+    desc:'Un cazarrecompensas solitario recorre los confines de la galaxia, lejos de la autoridad de la Nueva República.'},
+  andor:{title:'Andor', app:'disney', year:2022, genres:'Ciencia ficción, Espionaje', img:IMG('442/1107093'),
+    desc:'La historia de Cassian Andor y de los años que encendieron la chispa de la Rebelión.'},
+  bear:{title:'The Bear', app:'disney', year:2022, genres:'Drama, Comedia', img:IMG('413/1034786'),
+    desc:'Un chef de alta cocina regresa a Chicago para hacerse cargo del pequeño restaurante de su familia.'},
+  shogun:{title:'Shōgun', app:'disney', year:2024, genres:'Drama, Historia', img:IMG('506/1265761'),
+    desc:'Japón, año 1600: un navegante inglés naufraga y queda en medio de una lucha por el poder entre señores feudales.'},
+  lastofus:{title:'The Last of Us', app:'max', year:2023, genres:'Drama, Acción', img:IMG('441/1103208'),
+    desc:'Veinte años después de una pandemia, Joel debe sacar a Ellie de una zona de cuarentena y cruzar un país devastado.'},
+  hotd:{title:'La casa del dragón', app:'max', year:2022, genres:'Drama, Fantasía', img:IMG('488/1221139'),
+    desc:'La casa Targaryen se divide en una guerra por el Trono de Hierro, 200 años antes de Game of Thrones.'},
+  lotus:{title:'The White Lotus', app:'max', year:2021, genres:'Drama, Comedia', img:IMG('429/1072776'),
+    desc:'Una semana en un resort de lujo saca a la luz los secretos de huéspedes y empleados.'},
+};
+const RECS = {
+  mix:['stranger','lastofus','boys','mando','wednesday','hotd'],
+  netflix:['stranger','wednesday','squid'],
+  prime:['boys','reacher'],
+  disney:['mando','andor','bear','shogun'],
+  max:['lastofus','hotd','lotus'],
+};
+const RECENT = [
+  {id:'lastofus', ep:'T2 · E3', left:'Quedan 24 min', p:.62},
+  {id:'andor', ep:'T2 · E5', left:'Quedan 31 min', p:.35},
+  {id:'reacher', ep:'T3 · E2', left:'Quedan 9 min', p:.85},
+  {id:'stranger', ep:'T5 · E1', left:'Quedan 52 min', p:.15},
+  {id:'shogun', ep:'T1 · E7', left:'Quedan 28 min', p:.48},
+  {id:'bear', ep:'T4 · E2', left:'Quedan 12 min', p:.6},
+];
+const INPUTS = [1,2,3].map(n => ({id:'hdmi'+n, name:'HDMI '+n, sub:'Entrada', icon:'hdmi'}));
+const SYSTEM = [
+  {id:'settings', name:'Ajustes', sub:'Todos los ajustes', icon:'sliders'},
+  {id:'net', name:'Red e Internet', sub:'Wi-Fi y Ethernet', icon:'wifi'},
+  {id:'display', name:'Imagen', sub:'Modo y pantalla', icon:'display'},
+  {id:'sound', name:'Sonido', sub:'Salida y barra', icon:'sound'},
+  {id:'remote', name:'Control y accesorios', sub:'Bluetooth', icon:'remote'},
+  {id:'custom', name:'Personalizar', sub:'Apps, fondo y botones', icon:'sparkle'},
+  {id:'allapps', name:'Apps', sub:'Administrar', icon:'apps'},
+  {id:'storage', name:'Almacenamiento', sub:'Espacio libre', icon:'storage'},
+];
+const byId = {}; [...APPS, ...INPUTS, ...SYSTEM].forEach(x => byId[x.id] = x);
+Object.values(SHOWS).forEach(s => { const i = new Image(); i.src = s.img; });
+
+/* ---------- Render ---------- */
+$('#c-search').innerHTML = ICON.search + 'Buscar';
+$('#status').innerHTML = ICON.wifi;
+$('#b-info').innerHTML = ICON.info + 'Más info';
+$('#chev-l').innerHTML = ICON.left; $('#chev-r').innerHTML = ICON.right;
+const mini = app => `<span class="mini" style="background:${app.bg}">${app.logo}</span>`;
+const appTile = (a, row) => `<div class="tile" data-f ${row ? `data-row="${row}"` : ''} data-id="${a.id}" style="background:${a.bg}">${a.logo}</div>`;
+const glassTile = (x, row) => `<div class="tile glass" data-f ${row ? `data-row="${row}"` : ''} data-id="${x.id}">${ICON[x.icon]}<div class="t">${x.name}</div><div class="s">${x.sub}</div></div>`;
+$('#t-apps').innerHTML = FAV.map(id => appTile(byId[id], 'apps')).join('');
+$('#t-recent').innerHTML = RECENT.map((r, i) => {
+  const s = SHOWS[r.id];
+  return `<div class="tile media" data-f data-row="recent" data-recent="${i}" style="background-image:url(${s.img})">
+    ${mini(byId[s.app])}
+    <div class="minfo"><div class="t">${s.title}</div><div class="s">${r.ep} · ${r.left}</div></div>
+    <div class="prog"><i style="width:${r.p * 100}%"></i></div></div>`;
+}).join('');
+$('#t-inputs').innerHTML = INPUTS.map(x => glassTile(x, 'inputs')).join('');
+$('#t-system').innerHTML = SYSTEM.slice(0, 6).map(x => glassTile(x, 'system')).join('');
+$('#grid').innerHTML = APPS.map(a => `<div class="cell">${appTile(a)}<div class="name">${a.name}</div></div>`).join('');
+$('#apps-count').textContent = `${APPS.length} apps instaladas`;
+$('#cards').innerHTML = SYSTEM.map(x => glassTile(x)).join('');
+
+/* ---------- Escalado y reloj ---------- */
+const stage = $('#stage');
+const fit = () => stage.style.transform = `translate(-50%,-50%) scale(${Math.min(innerWidth / 1920, innerHeight / 1080)})`;
+addEventListener('resize', fit); fit();
+const tick = () => {
+  const d = new Date();
+  $('#time').textContent = d.toLocaleTimeString('es-MX', {hour:'numeric', minute:'2-digit'});
+  const f = d.toLocaleDateString('es-MX', {weekday:'long', day:'numeric', month:'long'});
+  $('#date').textContent = f.charAt(0).toUpperCase() + f.slice(1);
+};
+tick(); setInterval(tick, 15000);
+
+/* ---------- Fondo ---------- */
+let bdi = 0, bdKey = null;
+function setBackdrop(key, css) {
+  if (key === bdKey) return; bdKey = key;
+  const next = $('#bd' + (bdi ^ 1)), prev = $('#bd' + bdi);
+  next.style.background = css; next.style.backgroundSize = 'cover'; next.style.backgroundPosition = 'center right';
+  next.classList.add('on'); prev.classList.remove('on'); bdi ^= 1;
+}
+const showBg = s => `url(${s.img}) center right / cover no-repeat, #07080b`;
+const colorBg = it => `radial-gradient(1000px 700px at 74% 36%, ${it.a}d9, transparent 70%),
+  radial-gradient(900px 640px at 100% 100%, ${it.b}cc, transparent 70%),
+  radial-gradient(800px 520px at 8% 0%, ${it.b}88, transparent 72%), #07080b`;
+
+/* ---------- Carrusel de recomendaciones ---------- */
+let recKey = 'mix', slide = 0, heroShow = null, heroT = null;
+const curShow = () => RECS[recKey][slide];
+function renderHero(now) {
+  clearTimeout(heroT);
+  const apply = () => {
+    const id = curShow(), s = SHOWS[id], app = byId[s.app];
+    setBackdrop('show:' + id, showBg(s));
+    $('#dots').innerHTML = RECS[recKey].map((_, i) => `<i class="dot ${i === slide ? 'on' : ''}"></i>`).join('');
+    if (heroShow === id) return; heroShow = id;
+    const copy = $('#hcopy'); copy.classList.add('out');
+    setTimeout(() => {
+      $('#h-prov').innerHTML = `${mini(app)}<span>Disponible en ${app.name}</span>`;
+      $('#h-title').textContent = s.title;
+      $('#h-meta').textContent = `${s.year} · ${s.genres} · Serie`;
+      $('#h-desc').textContent = s.desc;
+      $('#b-watch').innerHTML = `${ICON.play}Ver en ${app.name}`;
+      copy.classList.remove('out');
+    }, now ? 0 : 180);
+  };
+  now ? apply() : (heroT = setTimeout(apply, 120));
+}
+function useRecs(key) {
+  if (!RECS[key]) key = recKey;          // apps sin catálogo (YouTube, Spotify…) dejan el carrusel como está
+  if (key !== recKey) { recKey = key; slide = 0; }
+  renderHero();
+}
+function step(d) {
+  const n = RECS[recKey].length; slide = (slide + d + n) % n; renderHero(true); lastStep = Date.now();
+}
+let lastStep = Date.now();
+setInterval(() => {   // avance automático mientras estás en el banner o en Mis apps
+  if (view !== 'home' || !cur || Date.now() - lastStep < 9000) return;
+  if (cur.closest('#hero') || cur.dataset.row === 'apps' || cur.closest('header')) step(1);
+}, 1000);
+
+/* ---------- Vistas ---------- */
+let view = 'home';
+function showView(v) {
+  if (v === view) return; view = v;
+  document.querySelectorAll('.view').forEach(s => s.classList.toggle('on', s.id === 'v-' + v));
+  document.querySelectorAll('[data-tab]').forEach(c => c.classList.toggle('active', c.dataset.tab === v));
+  if (v === 'home') renderHero(true);
+  if (v === 'settings') setBackdrop('settings', colorBg({a:'#24384c', b:'#0b1520'}));
+}
+
+/* ---------- Navegación con flechas (por cercanía, como en Android TV) ---------- */
+let cur = null; const mem = {};
+const focusables = () => [...document.querySelectorAll('header [data-f], .view.on [data-f]')];
+function setFocus(el) {
+  if (!el) return;
+  cur && cur.classList.remove('focus');
+  cur = el; el.classList.add('focus');
+  if (el.dataset.row) mem[el.dataset.row] = el;
+  if (el.dataset.tab) showView(el.dataset.tab);
+  if (el.closest('#v-home')) {
+    if (el.dataset.row === 'apps') useRecs(el.dataset.id);
+    else if (el.dataset.row === 'hero') renderHero();
+    else if (el.dataset.recent) { const s = RECENT[+el.dataset.recent].id; setBackdrop('show:' + s, showBg(SHOWS[s])); }
+    scrollHome(el);
+  }
+  if (el.closest('#v-apps')) { const a = byId[el.dataset.id]; setBackdrop('app:' + a.id, colorBg(a)); scrollGrid(el); }
+  const track = el.closest('.track'); if (track) scrollTrack(track, el);
+}
+function scrollTrack(track, el) {
+  const vis = 1920 - 240; let x = +(track.dataset.x || 0);
+  const l = el.offsetLeft, w = el.offsetWidth;
+  if (l - x < 0) x = l; else if (l + w - x > vis) x = l + w - vis;
+  track.dataset.x = x; track.style.transform = `translateX(${-x}px)`;
+}
+function scrollHome(el) {
+  const rows = [...document.querySelectorAll('#rows .row')];
+  const row = el.closest('.row'), i = rows.indexOf(row);
+  const y = i > 0 ? Math.max(0, row.offsetTop - 600) : 0;
+  $('#scroller').style.transform = `translateY(${-y}px)`;
+  $('#hero').style.opacity = y ? 0 : 1;
+  rows.forEach(r => r.style.opacity = (r.offsetTop - y < 160) ? 0 : 1);
+}
+function scrollGrid(el) {
+  const cell = el.closest('.cell'), rowH = cell.offsetHeight + 50;
+  $('#slide-apps').style.transform = `translateY(${-Math.max(0, cell.offsetTop - rowH * 2)}px)`;
+}
+function move(dir) {
+  // En los botones del banner, izquierda/derecha en los extremos cambian de recomendación
+  if (cur.dataset.act === 'watch' && dir === 'left') return step(-1);
+  if (cur.dataset.act === 'info' && dir === 'right') return step(1);
+  const r = cur.getBoundingClientRect();
+  const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+  const horiz = dir === 'left' || dir === 'right';
+  const cands = [];
+  for (const el of focusables()) {
+    if (el === cur) continue;
+    const c = el.getBoundingClientRect();
+    const ex = c.left + c.width / 2, ey = c.top + c.height / 2;
+    let primary, ortho;
+    if (dir === 'left')  { primary = cx - ex; ortho = Math.abs(ey - cy); }
+    if (dir === 'right') { primary = ex - cx; ortho = Math.abs(ey - cy); }
+    if (dir === 'up')    { primary = cy - ey; ortho = Math.abs(ex - cx); }
+    if (dir === 'down')  { primary = ey - cy; ortho = Math.abs(ex - cx); }
+    if (primary < 8) continue;
+    if (horiz && ortho > r.height * 0.6) continue;
+    cands.push({el, primary, ortho});
+  }
+  if (!cands.length) return;
+  let best;
+  if (horiz) best = cands.sort((a, b) => a.primary - b.primary)[0].el;
+  else {
+    const minP = Math.min(...cands.map(c => c.primary));
+    const band = cands.filter(c => c.primary < minP + 60).sort((a, b) => a.ortho - b.ortho);
+    best = band[0].el;
+    const rk = best.dataset.row;
+    if (rk && mem[rk] && rk !== cur.dataset.row && band.some(c => c.el === mem[rk])) best = mem[rk];
+  }
+  setFocus(best);
+}
+
+/* ---------- Acciones ---------- */
+let toastT;
+function toast(msg) {
+  const t = $('#toast'); t.textContent = msg; t.classList.add('on');
+  clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('on'), 1800);
+}
+function activate() {
+  const d = cur.dataset;
+  if (d.tab) return move('down');
+  if (d.act === 'search') return toast('Búsqueda por voz o teclado');
+  if (d.act === 'watch') { const s = SHOWS[curShow()]; return toast(`Abriendo ${s.title} en ${byId[s.app].name}…`); }
+  if (d.act === 'info') return toast('Ficha con temporadas, reparto y tráiler');
+  if (d.recent) { const r = RECENT[+d.recent], s = SHOWS[r.id]; return toast(`Reanudando ${s.title} (${r.ep}) en ${byId[s.app].name}…`); }
+  if (d.id) { const it = byId[d.id]; toast(d.id.startsWith('hdmi') ? `Cambiando a ${it.name}…` : `Abriendo ${it.name}…`); }
+}
+function goHome() {
+  setFocus(document.querySelector('[data-tab="home"]'));
+  setFocus(mem.apps || document.querySelector('#t-apps .tile'));
+}
+const REMOTE = {n:'netflix', y:'youtube', p:'prime', d:'disney'};
+addEventListener('keydown', e => {
+  const k = e.key;
+  const dirs = {ArrowLeft:'left', ArrowRight:'right', ArrowUp:'up', ArrowDown:'down'};
+  if (dirs[k]) { e.preventDefault(); move(dirs[k]); return; }
+  if (k === 'Enter' || k === ' ') { e.preventDefault(); activate(); return; }
+  if (k === 'Escape' || k === 'Backspace') { e.preventDefault(); goHome(); return; }
+  const lk = k.toLowerCase();
+  if (lk === 'a') { setFocus(document.querySelector('[data-tab="apps"]')); setFocus(document.querySelector('#grid .tile')); }
+  if (lk === 's') { setFocus(document.querySelector('[data-tab="settings"]')); setFocus(document.querySelector('#cards .tile')); }
+  if (REMOTE[lk]) toast(`Abriendo ${byId[REMOTE[lk]].name}…`);
+  if (lk === 'h') $('#hint').classList.toggle('off');
+});
+
+/* ---------- Inicio ---------- */
+renderHero(true);
+setFocus(document.querySelector('#t-apps .tile'));
+setTimeout(() => $('#hint').classList.add('off'), 8000);
+</script>
+</body>
+</html>
