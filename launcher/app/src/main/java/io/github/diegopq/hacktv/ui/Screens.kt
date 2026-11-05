@@ -43,7 +43,6 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
@@ -67,7 +66,6 @@ import io.github.diegopq.hacktv.data.Inputs
 import io.github.diegopq.hacktv.data.LauncherApp
 import io.github.diegopq.hacktv.data.PROVIDERS
 import io.github.diegopq.hacktv.data.RecommendationSet
-import io.github.diegopq.hacktv.data.SampleContent
 import io.github.diegopq.hacktv.data.SystemShortcut
 import io.github.diegopq.hacktv.data.TvInputItem
 import io.github.diegopq.hacktv.ui.theme.HackColors
@@ -122,10 +120,10 @@ fun HomeScreen(
     onHide: (String) -> Unit,
 ) {
     val context = LocalContext.current
-    // The banner follows the focused app's service; apps without a catalog keep the current list.
-    var recKey by rememberSaveable { mutableStateOf(SampleContent.MIX) }
-    val recs = remember(recKey, recommendations) { recommendations.forKey(recKey) }
-    var slide by remember(recKey, recommendations) { mutableIntStateOf(0) }
+    // A random pick of titles from every installed service, new each time Home is shown;
+    // it doesn't change with the focused app.
+    val recs = remember(recommendations) { recommendations.shuffledPick() }
+    var slide by remember(recommendations) { mutableIntStateOf(0) }
     val rec = recs.getOrNull(slide.mod(recs.size.coerceAtLeast(1)))
     val providerApp = remember(rec, allApps) {
         val pkg = rec?.let { PROVIDERS[it.provider]?.packageName }
@@ -179,7 +177,7 @@ fun HomeScreen(
     BackHandler(enabled = movingPackage != null) { finishMove() }
 
     LaunchedEffect(rec?.imageUrl) { rec?.let { onBackdrop(it.imageUrl) } }
-    LaunchedEffect(recKey, slide, recs) {
+    LaunchedEffect(slide, recs) {
         delay(9_000)
         if (recs.isNotEmpty()) slide = (slide + 1).mod(recs.size)
     }
@@ -263,7 +261,6 @@ fun HomeScreen(
                             },
                         onFocused = {
                             showBanner()
-                            SampleContent.providerKeyFor(app.packageName)?.let { recKey = it }
                         },
                     )
                 }

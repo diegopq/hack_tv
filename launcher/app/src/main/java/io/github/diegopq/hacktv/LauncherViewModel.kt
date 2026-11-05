@@ -38,6 +38,7 @@ class LauncherViewModel(application: Application) : AndroidViewModel(application
     private val _recommendations = MutableStateFlow(SampleContent.set())
     val recommendations: StateFlow<RecommendationSet> = _recommendations.asStateFlow()
     private var recommendationsJob: Job? = null
+    private var recommendationsFor: Set<String> = emptySet()
 
     /** The user's order and hidden apps for My apps. */
     private val _layout = MutableStateFlow(HomeLayoutStore.load(application))
@@ -80,9 +81,15 @@ class LauncherViewModel(application: Application) : AndroidViewModel(application
      * cache is older than a few hours. Cheap to call on every resume.
      */
     fun refreshRecommendations() {
-        if (!Tmdb.isConfigured || recommendationsJob?.isActive == true) return
+        // Wait for the app list: without it the launcher can't tell which services are installed.
+        if (!Tmdb.isConfigured || _apps.value.isEmpty()) return
         val context = getApplication<Application>()
         val installed = _apps.value.map { it.packageName }.toSet()
+        if (recommendationsJob?.isActive == true) {
+            if (installed == recommendationsFor) return
+            recommendationsJob?.cancel()   // the installed apps changed: start over with the new set
+        }
+        recommendationsFor = installed
         recommendationsJob = viewModelScope.launch {
             val fresh = withContext(Dispatchers.IO) { Tmdb.cached(context, installed) }
             if (fresh != null) {

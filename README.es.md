@@ -13,7 +13,7 @@ Empezó como una forma de acelerar y limpiar una TV Hisense con Android TV (Andr
 | Reproducido recientemente | Todas las apps |
 |---|---|
 | ![Fila de reproducido recientemente](docs/screenshots/es/recently-played.jpg) | ![Cuadrícula con todas las apps](docs/screenshots/es/all-apps.jpg) |
-| **Las recomendaciones siguen a la app enfocada** | **Accesos directos a los ajustes** |
+| **Recomendaciones de tus apps instaladas** | **Accesos directos a los ajustes** |
 | ![Banner con recomendaciones de Disney+](docs/screenshots/es/home-disney.jpg) | ![Accesos directos a los ajustes](docs/screenshots/es/settings.jpg) |
 
 > Las capturas son de la maqueta HTML, todavía no de la app Android. La interfaz está disponible en español e inglés.
@@ -49,7 +49,7 @@ Empezó como una forma de acelerar y limpiar una TV Hisense con Android TV (Andr
 ## Funciones planeadas
 
 - **Pantalla de inicio sin anuncios** con tus apps, las entradas HDMI y accesos directos del sistema.
-- **Banner de recomendaciones** con películas y series disponibles en las apps de streaming que tienes instaladas, desde [TMDB](https://www.themoviedb.org/). Se filtra según la app que tengas enfocada.
+- **Banner de recomendaciones** con películas y series disponibles en las apps de streaming que tienes instaladas, desde [TMDB](https://www.themoviedb.org/). Muestra una mezcla aleatoria solo de esas apps.
 - **Fila de reproducido recientemente**, armada con el historial local propio del launcher a partir de lo que reproducen tus apps (sesiones multimedia de Android).
 - **Remapeo de botones del control** mediante un servicio de accesibilidad, por ejemplo los botones de Ajustes, Lista de apps, YouTube, Prime Video y Disney+.
 - **Ligero**: optimizado para TVs con hardware modesto.
@@ -159,7 +159,7 @@ Las apps que instales después se agregan al final de la fila.
 
 ### Recomendaciones
 
-Con `TMDB_API_KEY` en el `.env`, el banner muestra películas y series populares de los últimos tres años en las apps de streaming instaladas en la TV (Netflix, Prime Video, Disney+, HBO Max, Paramount+, ViX, Crunchyroll), en el idioma y país de la TV. Al enfocar el mosaico de una app se muestran los títulos de ese servicio. Los resultados se guardan en caché seis horas. **Más info** abre el título en la búsqueda de Google TV, que enlaza a la app que lo tiene. La clave queda dentro del APK, así que no compartas tu APK públicamente.
+Con `TMDB_API_KEY` en el `.env`, el banner muestra películas y series populares de los últimos tres años en las apps de streaming instaladas en la TV (Netflix, Prime Video, Disney+, HBO Max, Paramount+, ViX, Crunchyroll), en el idioma y país de la TV. Solo se usan los servicios cuya app está instalada, y el banner muestra una mezcla aleatoria de hasta diez títulos que se turna entre ellos, distinta cada vez que abres Inicio. Los resultados se guardan en caché seis horas. Si el idioma de tu TV es la variante de otro país (por ejemplo `es-US` en una TV en México), configura `TMDB_REGION` para que los títulos coincidan con lo disponible donde vives. **Más info** abre el título en la búsqueda de Google TV, que enlaza a la app que lo tiene. La clave queda dentro del APK, así que no compartas tu APK públicamente.
 
 Las versiones release se firman con tu clave local de depuración para poder instalarlas por adb. Configura una clave de firma real antes de publicar un APK.
 

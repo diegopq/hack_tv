@@ -2,24 +2,27 @@ package io.github.diegopq.hacktv.data
 
 import java.util.Locale
 
-/** A streaming service a recommendation can come from, with its TMDB watch-provider id. */
+/**
+ * A streaming service a recommendation can come from, with its TMDB watch-provider ids. Some services
+ * have a different id per region (Prime Video is 119 in Mexico and 9 in the US), so all of them are listed.
+ */
 data class Provider(
     val key: String,
     val name: String,
     val packageName: String,
     val color: Long,
-    val tmdbId: Int,
+    val tmdbIds: List<Int>,
 )
 
 /** The services the banner knows, in the order the mixed list takes them. */
 val PROVIDERS = listOf(
-    Provider("netflix", "Netflix", "com.netflix.ninja", 0xFFE50914, 8),
-    Provider("prime", "Prime Video", "com.amazon.amazonvideo.livingroom", 0xFF00A8E1, 119),
-    Provider("disney", "Disney+", "com.disney.disneyplus", 0xFF1C3FA8, 337),
-    Provider("max", "HBO Max", "com.wbd.stream", 0xFF0021F3, 1899),
-    Provider("paramount", "Paramount+", "com.cbs.ott", 0xFF0064FF, 531),
-    Provider("vix", "ViX", "com.univision.prendetv", 0xFFFF5A00, 457),
-    Provider("crunchyroll", "Crunchyroll", "com.crunchyroll.crunchyroid", 0xFFF47521, 283),
+    Provider("netflix", "Netflix", "com.netflix.ninja", 0xFFE50914, listOf(8)),
+    Provider("prime", "Prime Video", "com.amazon.amazonvideo.livingroom", 0xFF00A8E1, listOf(119, 9)),
+    Provider("disney", "Disney+", "com.disney.disneyplus", 0xFF1C3FA8, listOf(337)),
+    Provider("max", "HBO Max", "com.wbd.stream", 0xFF0021F3, listOf(1899)),
+    Provider("paramount", "Paramount+", "com.cbs.ott", 0xFF0064FF, listOf(531, 2303, 2616)),
+    Provider("vix", "ViX", "com.univision.prendetv", 0xFFFF5A00, listOf(457)),
+    Provider("crunchyroll", "Crunchyroll", "com.crunchyroll.crunchyroid", 0xFFF47521, listOf(283)),
 ).associateBy { it.key }
 
 /** The four services the banner falls back to when none of the known apps is installed. */
@@ -37,11 +40,29 @@ data class Recommendation(
     val isMovie: Boolean,
 )
 
-/** Recommendations for each service key, plus [SampleContent.MIX] for a mix of all of them. */
+/** Recommendations for each installed service (by service key). */
 data class RecommendationSet(val byKey: Map<String, List<Recommendation>>, val fromTmdb: Boolean) {
-    /** One service's list, or the mix when that service has none. */
-    fun forKey(key: String): List<Recommendation> =
-        byKey[key]?.takeIf { it.isNotEmpty() } ?: byKey[SampleContent.MIX].orEmpty()
+
+    /** Every title, once, from all the services. */
+    val pool: List<Recommendation>
+        get() = byKey.filterKeys { it != SampleContent.MIX }.values.flatten().distinctBy { it.id }
+
+    /**
+     * A random selection for the banner: shuffled, at most [size] titles, and never two from the
+     * same service in a row when there's more than one service, so one app doesn't take over.
+     */
+    fun shuffledPick(size: Int = 10): List<Recommendation> {
+        val byService = pool.shuffled().groupBy { it.provider }.mapValues { it.value.toMutableList() }
+        val order = byService.keys.shuffled()
+        val out = ArrayList<Recommendation>()
+        while (out.size < size && byService.values.any { it.isNotEmpty() }) {
+            for (key in order) {
+                val list = byService.getValue(key)
+                if (list.isNotEmpty() && out.size < size) out += list.removeAt(0)
+            }
+        }
+        return out
+    }
 }
 
 /** A sample entry with its text in Spanish and English. */
@@ -144,8 +165,4 @@ object SampleContent {
         byKey[MIX] = mix.mapNotNull { all[it]?.localized(spanish) }
         return RecommendationSet(byKey, fromTmdb = false)
     }
-
-    /** The service an app belongs to, or null for apps without a catalog (YouTube, Spotify…). */
-    fun providerKeyFor(packageName: String): String? =
-        PROVIDERS.values.firstOrNull { it.packageName == packageName }?.key
 }

@@ -13,7 +13,7 @@ It started as a way to speed up and clean up a Hisense Android TV (Android 12, M
 | Recently played | All apps |
 |---|---|
 | ![Recently played row](docs/screenshots/recently-played.jpg) | ![All apps grid](docs/screenshots/all-apps.jpg) |
-| **Recommendations follow the focused app** | **Settings shortcuts** |
+| **Recommendations from the apps you have** | **Settings shortcuts** |
 | ![Banner showing Disney+ recommendations](docs/screenshots/home-disney.jpg) | ![Settings shortcuts](docs/screenshots/settings.jpg) |
 
 > Screenshots come from the HTML mockup, not the Android app yet. The UI is available in English and Spanish.
@@ -49,7 +49,7 @@ It started as a way to speed up and clean up a Hisense Android TV (Android 12, M
 ## Planned features
 
 - **Ad-free home screen** with your apps, HDMI inputs, and system shortcuts.
-- **Recommendations banner** with movies and series available on the streaming apps you have installed, from [TMDB](https://www.themoviedb.org/). It filters by the app you're focused on.
+- **Recommendations banner** with movies and series available on the streaming apps you have installed, from [TMDB](https://www.themoviedb.org/). It shows a random mix from those apps only.
 - **Recently played** row, built from the launcher's own local history of what your apps play (Android media sessions).
 - **Remote button remapping** through an accessibility service, for example the Settings, App list, YouTube, Prime Video, and Disney+ buttons.
 - **Lightweight**: tuned for low-end TV hardware.
@@ -159,7 +159,7 @@ Apps installed later go at the end of the row.
 
 ### Recommendations
 
-With `TMDB_API_KEY` set in `.env`, the banner shows popular movies and series from the last three years on the streaming apps installed on the TV (Netflix, Prime Video, Disney+, HBO Max, Paramount+, ViX, Crunchyroll), in the TV's language and country. Focusing an app's tile shows that service's titles. Results are cached for six hours. **More info** opens the title in Google TV's search, which links to the app that has it. The key is built into the APK, so don't share your APK publicly.
+With `TMDB_API_KEY` set in `.env`, the banner shows popular movies and series from the last three years on the streaming apps installed on the TV (Netflix, Prime Video, Disney+, HBO Max, Paramount+, ViX, Crunchyroll), in the TV's language and country. Only services whose app is installed are used, and the banner shows a random mix of up to ten titles that takes turns between them, new each time you open Home. Results are cached for six hours. If your TV's language is set to another country's variant (for example `es-US` on a TV in Mexico), set `TMDB_REGION` so the titles match what's available where you live. **More info** opens the title in Google TV's search, which links to the app that has it. The key is built into the APK, so don't share your APK publicly.
 
 Release builds are signed with your local debug key, so they install over adb. Set up a real signing key before publishing an APK.
 

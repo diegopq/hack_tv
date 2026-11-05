@@ -19,7 +19,7 @@ import java.util.Locale
 
 /**
  * Recommendations from TMDB: popular, recent movies and series on each streaming service
- * the TV has installed, in the TV's language and country.
+ * the TV has installed (and only those), in the TV's language and country.
  *
  * Results are cached on disk and refreshed every few hours, so the TV makes about a dozen
  * small requests at most a few times a day. This product uses the TMDB API but is not
@@ -30,7 +30,7 @@ object Tmdb {
     private const val TAG = "Tmdb"
     private const val API = "https://api.themoviedb.org/3"
     private const val IMAGES = "https://image.tmdb.org/t/p/w1280"
-    private const val PER_SERVICE = 6
+    private const val PER_SERVICE = 10
     private const val MIX_SIZE = 8
     private const val MAX_AGE_MS = 6 * 60 * 60 * 1000L
 
@@ -108,7 +108,7 @@ object Tmdb {
             "/discover/$type",
             mapOf(
                 "watch_region" to region,
-                "with_watch_providers" to provider.tmdbId.toString(),
+                "with_watch_providers" to provider.tmdbIds.joinToString("|"),
                 "with_watch_monetization_types" to "flatrate|free|ads",
                 "language" to language,
                 "sort_by" to "popularity.desc",
@@ -186,7 +186,7 @@ object Tmdb {
 
     /** The cache is only valid for the same language, country and installed services. */
     private fun queryKey(installedPackages: Set<String>): String =
-        "${languageTag()}|${region()}|" + servicesFor(installedPackages).joinToString(",") { it.key }
+        "v3|${languageTag()}|${region()}|" + servicesFor(installedPackages).joinToString(",") { it.key }
 
     private fun cacheFile(context: Context) = File(context.cacheDir, "tmdb-recommendations.json")
 
