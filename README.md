@@ -27,6 +27,7 @@ It started as a way to speed up and clean up a Hisense Android TV (Android 12, M
   - [URL parameters](#url-parameters)
 - [Build and install the launcher](#build-and-install-the-launcher)
   - [Remote buttons](#remote-buttons)
+  - [Make it the home screen](#make-it-the-home-screen)
   - [Move and hide apps](#move-and-hide-apps)
   - [Recommendations](#recommendations)
 - [Configuration](#configuration)
@@ -43,7 +44,7 @@ It started as a way to speed up and clean up a Hisense Android TV (Android 12, M
 |---|---|
 | UI design (HTML mockup) | ✅ Done: [`diseno/maqueta.html`](diseno/maqueta.html) |
 | Revert script for the TV optimizations | ✅ Done: [`revert_tv.sh`](revert_tv.sh) |
-| Android launcher app | 🚧 v0.4 in [`launcher/`](launcher/): Home with the recommendations banner (TMDB, or sample data without a key), remote shortcut buttons, your apps (move and hide them), HDMI inputs and settings shortcuts, the All apps and Settings pages, English and Spanish |
+| Android launcher app | 🚧 v0.4.1 in [`launcher/`](launcher/): Home with the recommendations banner (TMDB, or sample data without a key), remote shortcut buttons, your apps (move and hide them), HDMI inputs and settings shortcuts, the All apps and Settings pages, English and Spanish |
 
 ## Planned features
 
@@ -133,6 +134,18 @@ adb shell pm grant io.github.diegopq.hacktv android.permission.WRITE_SECURE_SETT
 ```
 
 The **Remote buttons** card on the launcher's Settings page shows whether the service is on. Keys sent with `adb shell input keyevent` don't go through accessibility services, so test the buttons with the real remote.
+
+### Make it the home screen
+
+Once the remote buttons work, make hack_tv the TV's real home screen. Google TV then stops showing at power-on, and Home or Back from any app lands on hack_tv:
+
+```bash
+adb shell pm disable-user --user 0 com.google.android.apps.tv.launcherx      # Google TV's launcher
+adb shell pm disable-user --user 0 com.google.android.tungsten.setupwraith   # its recovery screen would take Home otherwise
+adb shell cmd package set-home-activity io.github.diegopq.hacktv/.MainActivity
+```
+
+Wait about 30 seconds before rebooting, so Android saves the change. If another launcher's accessibility service redirects Home (Projectivy does), turn it off first. Before disabling setupwraith, check that your saved Wi-Fi doesn't belong to it: `adb shell dumpsys wifi | grep -o 'cname=[^ ]*'` should show `android.uid.system`. `./revert_tv.sh` turns both packages back on.
 
 ### Move and hide apps
 

@@ -62,9 +62,13 @@
             </intent-filter>
         </activity>
 
+        <!-- Its own process: Android waits for key-filtering services before delivering every key, so
+             this one must never wait for the launcher's UI thread (that showed up as a second, repeated
+             key press while a page was being drawn). -->
         <service
             android:name=".keys.RemoteKeyService"
             android:exported="false"
+            android:process=":keys"
             android:label="@string/keys_service_label"
             android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
             <intent-filter>

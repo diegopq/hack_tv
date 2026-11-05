@@ -23,6 +23,9 @@ import androidx.compose.runtime.produceState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -41,6 +44,8 @@ import kotlinx.coroutines.delay
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+
+private val TAB_ARROWS = setOf(Key.DirectionLeft, Key.DirectionRight)
 
 /** Search on the left, the Home / Apps / Settings tabs in the middle, Wi-Fi and the clock on the right. */
 @Composable
@@ -103,7 +108,11 @@ private fun Chip(
 ) {
     Surface(
         onClick = onClick,
-        modifier = Modifier.height(29.dp).onFocusChanged { if (it.isFocused) onFocused() },
+        modifier = Modifier
+            .height(29.dp)
+            .onFocusChanged { if (it.isFocused) onFocused() }
+            // A held arrow repeats; on the tabs that skipped a tab, since each tab you pass opens its page.
+            .onPreviewKeyEvent { it.nativeKeyEvent.repeatCount > 0 && it.key in TAB_ARROWS },
         shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(15.dp)),
         scale = ClickableSurfaceDefaults.scale(focusedScale = 1.06f),
         colors = ClickableSurfaceDefaults.colors(

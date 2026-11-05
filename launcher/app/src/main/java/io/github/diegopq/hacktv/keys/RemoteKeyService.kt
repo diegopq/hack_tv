@@ -30,10 +30,11 @@ class RemoteKeyService : AccessibilityService() {
     }
 
     override fun onKeyEvent(event: KeyEvent): Boolean {
-        if (BuildConfig.DEBUG) Log.d(TAG, "key ${event.keyCode} action=${event.action} scan=${event.scanCode}")
+        if (BuildConfig.DEBUG) Log.d(TAG, "key ${event.keyCode} action=${event.action} scan=${event.scanCode} repeat=${event.repeatCount} device=${event.deviceId}:${event.device?.name} t=${event.eventTime}")
         val action = map[event.keyCode] ?: return false
         // Generic game controller buttons share keycodes with some remote buttons (KEYCODE_BUTTON_3 is
-        // YouTube here). Controllers have sticks, remotes don't.
+        // YouTube here). Only real controllers report both gamepad and joystick: the Hisense remote
+        // ("SmartRC Consumer Control") reports joystick alone.
         if (event.isFromController()) return false
         // Act on the first press, without waiting for the button to be released; swallow the rest.
         if (event.action == KeyEvent.ACTION_DOWN && event.repeatCount == 0) perform(action)
@@ -71,5 +72,6 @@ class RemoteKeyService : AccessibilityService() {
 
 private fun KeyEvent.isFromController(): Boolean {
     val sources = device?.sources ?: return false
-    return sources and InputDevice.SOURCE_JOYSTICK == InputDevice.SOURCE_JOYSTICK
+    return sources and InputDevice.SOURCE_GAMEPAD == InputDevice.SOURCE_GAMEPAD &&
+        sources and InputDevice.SOURCE_JOYSTICK == InputDevice.SOURCE_JOYSTICK
 }

@@ -27,6 +27,7 @@ Empezó como una forma de acelerar y limpiar una TV Hisense con Android TV (Andr
   - [Parámetros de la URL](#parámetros-de-la-url)
 - [Compilar e instalar el launcher](#compilar-e-instalar-el-launcher)
   - [Botones del control](#botones-del-control)
+  - [Hacerlo la pantalla de inicio](#hacerlo-la-pantalla-de-inicio)
   - [Mover y ocultar apps](#mover-y-ocultar-apps)
   - [Recomendaciones](#recomendaciones)
 - [Configuración](#configuración)
@@ -43,7 +44,7 @@ Empezó como una forma de acelerar y limpiar una TV Hisense con Android TV (Andr
 |---|---|
 | Diseño de la interfaz (maqueta HTML) | ✅ Listo: [`diseno/maqueta.html`](diseno/maqueta.html) |
 | Script para revertir las optimizaciones de la TV | ✅ Listo: [`revert_tv.sh`](revert_tv.sh) |
-| App launcher para Android | 🚧 v0.4 en [`launcher/`](launcher/): Inicio con el banner de recomendaciones (TMDB, o datos de muestra sin clave), botones de acceso directo del control, tus apps (muévelas y ocúltalas), entradas HDMI y accesos a ajustes, las páginas Todas las apps y Ajustes, en español e inglés |
+| App launcher para Android | 🚧 v0.4.1 en [`launcher/`](launcher/): Inicio con el banner de recomendaciones (TMDB, o datos de muestra sin clave), botones de acceso directo del control, tus apps (muévelas y ocúltalas), entradas HDMI y accesos a ajustes, las páginas Todas las apps y Ajustes, en español e inglés |
 
 ## Funciones planeadas
 
@@ -133,6 +134,18 @@ adb shell pm grant io.github.diegopq.hacktv android.permission.WRITE_SECURE_SETT
 ```
 
 La tarjeta **Botones del control** en la página Ajustes del launcher muestra si el servicio está activo. Las teclas enviadas con `adb shell input keyevent` no pasan por los servicios de accesibilidad, así que prueba los botones con el control real.
+
+### Hacerlo la pantalla de inicio
+
+Cuando los botones del control funcionen, haz de hack_tv la pantalla de inicio real de la TV. Así Google TV deja de aparecer al encenderla, y Inicio o Atrás desde cualquier app te llevan a hack_tv:
+
+```bash
+adb shell pm disable-user --user 0 com.google.android.apps.tv.launcherx      # el launcher de Google TV
+adb shell pm disable-user --user 0 com.google.android.tungsten.setupwraith   # si no, su pantalla de recuperación tomaría el Inicio
+adb shell cmd package set-home-activity io.github.diegopq.hacktv/.MainActivity
+```
+
+Espera unos 30 segundos antes de reiniciar, para que Android guarde el cambio. Si el servicio de accesibilidad de otro launcher redirige el botón Inicio (Projectivy lo hace), apágalo primero. Antes de desactivar setupwraith, revisa que tu Wi-Fi guardada no le pertenezca: `adb shell dumpsys wifi | grep -o 'cname=[^ ]*'` debe mostrar `android.uid.system`. `./revert_tv.sh` vuelve a activar ambos paquetes.
 
 ### Mover y ocultar apps
 
