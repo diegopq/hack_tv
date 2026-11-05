@@ -108,6 +108,25 @@ Never commit `.env`. Only `.env.example` belongs in the repository.
 
 **Security:** only computers you approve on the TV can connect, but turn **USB debugging** off when you're done tweaking, especially on a shared network.
 
+### Let an AI agent guide you
+
+If you'd rather be walked through it, paste this prompt into an AI agent that can run commands on your computer, such as [Claude Code](https://claude.com/claude-code). The agent can't press buttons on the TV, so it tells you what to select and checks each step from the computer:
+
+```text
+Help me enable adb network debugging on my Android TV so this computer can connect to it over Wi-Fi. Guide me one step at a time and wait for me to confirm each step before moving on. I'm using the TV remote, so tell me exactly which menus and options to select, and keep in mind that menu names vary by brand and Android TV version (Google TV vs. older Android TV).
+
+1. Check this computer first: is adb (Android platform-tools) installed? If not, tell me how to install it for my operating system and verify it with "adb version".
+2. Walk me through turning on Developer options on the TV (selecting the build number 7 times in About).
+3. Walk me through turning on USB debugging and, if the TV has it, Network debugging / ADB over network or Wireless debugging.
+4. Help me find the TV's IP address from its network settings. If I can't find it, you may look for devices on my own local network with port 5555 open, but tell me what you're going to run first.
+5. Connect with "adb connect <IP>:5555". If the TV uses Wireless debugging with a pairing code instead, guide me through "adb pair" first.
+6. Remind me to accept the "Allow USB debugging?" prompt on the TV and check "Always allow from this computer". Then run "adb devices" and confirm the TV shows as "device".
+7. If something fails ("unauthorized", "connection refused", timeouts), explain the likely cause and how to fix it. Try restarting the adb server before anything else.
+8. When it works, save the IP as TV_IP in a .env file in this folder (create it from .env.example if it exists), run "adb shell getprop ro.product.model" to show me the TV model, and remind me to turn USB debugging off when I'm done.
+
+Don't change any setting on the TV through adb yet; this task is only about getting connected.
+```
+
 ## Optimize your TV with an AI agent
 
 You can hand the cleanup to an AI coding agent that can run commands on your computer, such as [Claude Code](https://claude.com/claude-code). First enable network debugging (previous section), then paste this prompt and replace `<TV_IP>` with your TV's IP:

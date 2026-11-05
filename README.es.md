@@ -108,6 +108,25 @@ Nunca subas `.env` al repositorio. Solo `.env.example` va en el repositorio.
 
 **Seguridad:** solo se pueden conectar las computadoras que apruebes en la TV, pero desactiva la **Depuración por USB** cuando termines de hacer ajustes, sobre todo en una red compartida.
 
+### Deja que un agente de IA te guíe
+
+Si prefieres que te acompañen paso a paso, pega este prompt en un agente de IA que pueda ejecutar comandos en tu computadora, como [Claude Code](https://claude.com/claude-code). El agente no puede presionar botones en la TV, así que te dice qué seleccionar y revisa cada paso desde la computadora:
+
+```text
+Ayúdame a activar la depuración por red de adb en mi Android TV para que esta computadora pueda conectarse por Wi-Fi. Guíame un paso a la vez y espera a que confirme cada paso antes de seguir. Estoy usando el control remoto de la TV, así que dime exactamente qué menús y opciones seleccionar, y ten en cuenta que los nombres de los menús cambian según la marca y la versión de Android TV (Google TV o Android TV más antiguo).
+
+1. Revisa primero esta computadora: ¿está instalado adb (Android platform-tools)? Si no, dime cómo instalarlo en mi sistema operativo y compruébalo con "adb version".
+2. Guíame para activar las Opciones para desarrolladores en la TV (seleccionar 7 veces el número de compilación en Información).
+3. Guíame para activar la Depuración por USB y, si la TV la tiene, la Depuración por red / ADB por red o la Depuración inalámbrica.
+4. Ayúdame a encontrar la IP de la TV en su configuración de red. Si no la encuentro, puedes buscar dispositivos en mi propia red local con el puerto 5555 abierto, pero dime antes qué vas a ejecutar.
+5. Conéctate con "adb connect <IP>:5555". Si la TV usa Depuración inalámbrica con código de vinculación, guíame primero con "adb pair".
+6. Recuérdame aceptar en la TV el aviso "¿Permitir la depuración por USB?" y marcar "Permitir siempre desde esta computadora". Después ejecuta "adb devices" y confirma que la TV aparece como "device".
+7. Si algo falla ("unauthorized", "connection refused", tiempos de espera agotados), explícame la causa probable y cómo arreglarlo. Antes que nada, prueba reiniciar el servidor de adb.
+8. Cuando funcione, guarda la IP como TV_IP en un archivo .env en esta carpeta (créalo a partir de .env.example si existe), ejecuta "adb shell getprop ro.product.model" para mostrarme el modelo de la TV y recuérdame desactivar la Depuración por USB cuando termine.
+
+Todavía no cambies ningún ajuste de la TV por adb; esta tarea es solo para lograr la conexión.
+```
+
 ## Optimiza tu TV con un agente de IA
 
 Puedes dejarle la limpieza a un agente de IA que pueda ejecutar comandos en tu computadora, como [Claude Code](https://claude.com/claude-code). Primero activa la depuración por red (sección anterior), luego pega este prompt y cambia `<TV_IP>` por la IP de tu TV:
