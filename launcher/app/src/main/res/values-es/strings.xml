@@ -10,9 +10,9 @@
     <string name="get_app">Instalar %1$s</string>
     <string name="movie">Película</string>
     <string name="tmdb_credit">Datos e imágenes: TMDB</string>
+    <string name="open_app">Abrir</string>
     <string name="more_info">Más info</string>
     <string name="series">Serie</string>
-    <string name="sample_credit">Imágenes de muestra: TVmaze (CC BY-SA)</string>
 
     <string name="menu_move">Mover</string>
     <string name="menu_hide">Ocultar de Inicio</string>
@@ -55,9 +55,10 @@
     <string name="keys_service_label">Botones del control de hack_tv</string>
     <string name="keys_service_description">Hace que los botones de acceso directo del control funcionen con hack_tv: Ajustes, lista de apps, YouTube, Prime Video y Disney+. Solo reacciona a esos botones y no lee nada de la pantalla.</string>
     <string name="sc_keys">Botones del control</string>
-    <string name="sc_keys_on">Activado</string>
-    <string name="sc_keys_off">Desactivado · actívalo en Accesibilidad</string>
-    <string name="keys_already_on">Los botones del control ya están activados</string>
+    <string name="sc_keys_on">Activado · OK para desactivar</string>
+    <string name="sc_keys_off">Desactivado · OK para activar</string>
+    <string name="keys_turned_on">Botones del control activados</string>
+    <string name="keys_turned_off">Botones del control desactivados. Puedes activarlos de nuevo aquí cuando quieras.</string>
     <string name="no_search">La búsqueda no está disponible en esta TV</string>
     <string name="coming_soon">Próximamente</string>
     <string name="cannot_open">No se pudo abrir %1$s</string>

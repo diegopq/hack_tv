@@ -44,7 +44,7 @@ Empezó como una forma de acelerar y limpiar una TV Hisense con Android TV (Andr
 |---|---|
 | Diseño de la interfaz (maqueta HTML) | ✅ Listo: [`diseno/maqueta.html`](diseno/maqueta.html) |
 | Script para revertir las optimizaciones de la TV | ✅ Listo: [`revert_tv.sh`](revert_tv.sh) |
-| App launcher para Android | 🚧 v0.4.1 en [`launcher/`](launcher/): Inicio con el banner de recomendaciones (TMDB, o datos de muestra sin clave), botones de acceso directo del control, tus apps (muévelas y ocúltalas), entradas HDMI y accesos a ajustes, las páginas Todas las apps y Ajustes, en español e inglés |
+| App launcher para Android | 🚧 v0.7 en [`launcher/`](launcher/): Inicio con el banner de recomendaciones (TMDB; sin clave muestra la app enfocada), botones de acceso directo del control, tus apps (muévelas y ocúltalas), entradas HDMI y accesos a ajustes, las páginas Todas las apps y Ajustes, en español e inglés |
 
 ## Funciones planeadas
 
@@ -127,13 +127,13 @@ adb shell settings put secure enabled_accessibility_services "<valor actual>:io.
 adb shell settings put secure accessibility_enabled 1
 ```
 
-Opcional: deja que el launcher vuelva a activar el servicio si el firmware lo apaga después de una actualización. Solo lo hace si tú lo tenías activado:
+Recomendado: deja que el launcher mantenga el servicio activo. Algunos firmwares (como esta Hisense, en reposo) borran la configuración de accesibilidad y con eso se apagan los botones; con este permiso el launcher lo detecta y vuelve a activar el servicio en segundos. También le permite activarlo y desactivarlo desde su tarjeta en Ajustes:
 
 ```bash
 adb shell pm grant io.github.diegopq.hacktv android.permission.WRITE_SECURE_SETTINGS
 ```
 
-La tarjeta **Botones del control** en la página Ajustes del launcher muestra si el servicio está activo. Las teclas enviadas con `adb shell input keyevent` no pasan por los servicios de accesibilidad, así que prueba los botones con el control real.
+La tarjeta **Botones del control** en la página Ajustes del launcher muestra si el servicio está activo, y con OK lo desactivas o activas. Si lo desactivas ahí, el launcher deja de reactivarlo. Las teclas enviadas con `adb shell input keyevent` no pasan por los servicios de accesibilidad, así que prueba los botones con el control real.
 
 ### Hacerlo la pantalla de inicio
 
@@ -175,7 +175,7 @@ cp .env.example .env
 |---|---|
 | `TV_IP` | Dirección IP de tu TV en la red local |
 | `TV_PORT` | Puerto de adb (por defecto `5555`) |
-| `TMDB_API_KEY` | Clave de API gratuita de TMDB para las recomendaciones ([consíguela aquí](https://www.themoviedb.org/settings/api)). Se lee al compilar el launcher; sin ella el banner muestra datos de muestra |
+| `TMDB_API_KEY` | Clave de API gratuita de TMDB para las recomendaciones ([consíguela aquí](https://www.themoviedb.org/settings/api)). Se lee al compilar el launcher; sin ella el banner de Inicio muestra la app enfocada (su nombre, su banner y un resplandor de su color) en lugar de recomendaciones |
 | `TMDB_REGION` | Opcional: país de dos letras para la disponibilidad en streaming (`MX`, `US`…). Vacío lo detecta por la zona horaria de la TV |
 
 Nunca subas `.env` al repositorio. Solo `.env.example` va en el repositorio.

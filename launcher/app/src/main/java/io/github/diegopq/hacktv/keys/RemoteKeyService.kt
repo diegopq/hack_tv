@@ -25,7 +25,6 @@ class RemoteKeyService : AccessibilityService() {
 
     override fun onServiceConnected() {
         super.onServiceConnected()
-        RemoteKeys.markWanted(this, true)
         if (BuildConfig.DEBUG) Log.d(TAG, "connected, flags=${serviceInfo?.flags} caps=${serviceInfo?.capabilities}")
     }
 
@@ -53,12 +52,6 @@ class RemoteKeyService : AccessibilityService() {
         } catch (e: ActivityNotFoundException) {
             Log.w(TAG, "Nothing opens $action")
         }
-    }
-
-    /** Turned off by the user in the accessibility settings: don't turn it back on by ourselves. */
-    override fun onUnbind(intent: Intent?): Boolean {
-        RemoteKeys.markWanted(this, false)
-        return super.onUnbind(intent)
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) = Unit

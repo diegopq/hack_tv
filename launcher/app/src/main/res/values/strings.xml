@@ -14,9 +14,9 @@
     <string name="get_app">Get %1$s</string>
     <string name="movie">Movie</string>
     <string name="tmdb_credit">Data and images: TMDB</string>
+    <string name="open_app">Open</string>
     <string name="more_info">More info</string>
     <string name="series">Series</string>
-    <string name="sample_credit">Sample images: TVmaze (CC BY-SA)</string>
 
     <!-- App menu (hold OK on an app) -->
     <string name="menu_move">Move</string>
@@ -63,9 +63,10 @@
     <string name="keys_service_label">hack_tv remote buttons</string>
     <string name="keys_service_description">Makes the remote\'s shortcut buttons work with hack_tv: Settings, app list, YouTube, Prime Video and Disney+. It only reacts to those buttons and doesn\'t read anything on screen.</string>
     <string name="sc_keys">Remote buttons</string>
-    <string name="sc_keys_on">On</string>
-    <string name="sc_keys_off">Off · turn on in Accessibility</string>
-    <string name="keys_already_on">Remote buttons are on</string>
+    <string name="sc_keys_on">On · OK to turn off</string>
+    <string name="sc_keys_off">Off · OK to turn on</string>
+    <string name="keys_turned_on">Remote buttons turned on</string>
+    <string name="keys_turned_off">Remote buttons turned off. Turn them on here again whenever you like.</string>
     <!-- Messages -->
     <string name="no_search">Search isn\'t available on this TV</string>
     <string name="coming_soon">Coming soon</string>

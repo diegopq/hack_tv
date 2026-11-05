@@ -44,27 +44,56 @@ object RemoteKeys {
         return enabled.split(':').any { ComponentName.unflattenFromString(it) == me }
     }
 
-    /** The service was on and the user hasn't turned it off: it should come back after a restart or update. */
-    fun markWanted(context: Context, wanted: Boolean) {
-        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putBoolean(KEY_WANTED, wanted).apply()
-    }
+    /** True when the launcher may write the setting itself: WRITE_SECURE_SETTINGS, granted over adb. */
+    fun canWriteSettings(context: Context): Boolean =
+        context.checkSelfPermission(Manifest.permission.WRITE_SECURE_SETTINGS) == PackageManager.PERMISSION_GRANTED
 
     /**
-     * Turns the service back on when Android dropped it (some firmware does after an app update) and the user
-     * had it on. Needs WRITE_SECURE_SETTINGS, which only adb can grant; without it this does nothing.
+     * Whether the user wants the remote buttons on. Only this launcher's process writes it: on when it
+     * sees the service turned on, off only when the user turns it off from the launcher's Settings card.
+     * Android dropping the service (some firmware wipes accessibility settings in standby) doesn't count.
      */
-    fun repairIfNeeded(context: Context) {
-        val wanted = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getBoolean(KEY_WANTED, false)
-        if (!wanted || isEnabled(context)) return
-        if (context.checkSelfPermission(Manifest.permission.WRITE_SECURE_SETTINGS) != PackageManager.PERMISSION_GRANTED) return
+    fun isWanted(context: Context): Boolean = prefs(context).getBoolean(KEY_WANTED, false)
+
+    fun setWanted(context: Context, wanted: Boolean) {
+        prefs(context).edit().putBoolean(KEY_WANTED, wanted).apply()
+    }
+
+    /** Turns the service on, keeping any other accessibility service that's on. Needs [canWriteSettings]. */
+    fun enable(context: Context): Boolean {
+        if (!canWriteSettings(context)) return false
         val resolver = context.contentResolver
         val current = Settings.Secure.getString(resolver, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES).orEmpty()
-        val updated = (current.split(':').filter { it.isNotBlank() } + component(context).flattenToString()).joinToString(":")
-        runCatching {
-            Settings.Secure.putString(resolver, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES, updated)
+        val others = current.split(':').filter { it.isNotBlank() && ComponentName.unflattenFromString(it) != component(context) }
+        return runCatching {
+            Settings.Secure.putString(resolver, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES,
+                (others + component(context).flattenToString()).joinToString(":"))
             Settings.Secure.putInt(resolver, Settings.Secure.ACCESSIBILITY_ENABLED, 1)
-        }
+        }.isSuccess
     }
+
+    /** Turns the service off, leaving the other accessibility services alone. Needs [canWriteSettings]. */
+    fun disable(context: Context): Boolean {
+        if (!canWriteSettings(context)) return false
+        val resolver = context.contentResolver
+        val current = Settings.Secure.getString(resolver, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES).orEmpty()
+        val others = current.split(':').filter { it.isNotBlank() && ComponentName.unflattenFromString(it) != component(context) }
+        return runCatching {
+            Settings.Secure.putString(resolver, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES, others.joinToString(":"))
+            if (others.isEmpty()) Settings.Secure.putInt(resolver, Settings.Secure.ACCESSIBILITY_ENABLED, 0)
+        }.isSuccess
+    }
+
+    /** Turns the service back on when something else turned it off and the user still wants it. */
+    fun repairIfNeeded(context: Context) {
+        if (isEnabled(context)) {
+            if (!isWanted(context)) setWanted(context, true)   // turned on by the user (Settings or adb)
+            return
+        }
+        if (isWanted(context)) enable(context)
+    }
+
+    private fun prefs(context: Context) = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
 
     fun openAppIntent(context: Context, packageName: String): Intent {
         val pm = context.packageManager

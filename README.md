@@ -44,7 +44,7 @@ It started as a way to speed up and clean up a Hisense Android TV (Android 12, M
 |---|---|
 | UI design (HTML mockup) | ✅ Done: [`diseno/maqueta.html`](diseno/maqueta.html) |
 | Revert script for the TV optimizations | ✅ Done: [`revert_tv.sh`](revert_tv.sh) |
-| Android launcher app | 🚧 v0.4.1 in [`launcher/`](launcher/): Home with the recommendations banner (TMDB, or sample data without a key), remote shortcut buttons, your apps (move and hide them), HDMI inputs and settings shortcuts, the All apps and Settings pages, English and Spanish |
+| Android launcher app | 🚧 v0.7 in [`launcher/`](launcher/): Home with the recommendations banner (TMDB; without a key it spotlights the focused app), remote shortcut buttons, your apps (move and hide them), HDMI inputs and settings shortcuts, the All apps and Settings pages, English and Spanish |
 
 ## Planned features
 
@@ -127,13 +127,13 @@ adb shell settings put secure enabled_accessibility_services "<current value>:io
 adb shell settings put secure accessibility_enabled 1
 ```
 
-Optional: let the launcher turn the service back on if the firmware drops it after an update. It only does so if you had it on:
+Recommended: let the launcher keep the service on. Some firmware (this Hisense, in standby) wipes the accessibility settings, which turns the buttons off; with this permission the launcher notices and turns the service back on within seconds. It lets the launcher turn the service on and off from its Settings card too:
 
 ```bash
 adb shell pm grant io.github.diegopq.hacktv android.permission.WRITE_SECURE_SETTINGS
 ```
 
-The **Remote buttons** card on the launcher's Settings page shows whether the service is on. Keys sent with `adb shell input keyevent` don't go through accessibility services, so test the buttons with the real remote.
+The **Remote buttons** card on the launcher's Settings page shows whether the service is on, and OK on it turns it off or on. Turned off there, the launcher stops turning it back on. Keys sent with `adb shell input keyevent` don't go through accessibility services, so test the buttons with the real remote.
 
 ### Make it the home screen
 
@@ -175,7 +175,7 @@ cp .env.example .env
 |---|---|
 | `TV_IP` | Your TV's IP address on the local network |
 | `TV_PORT` | adb port (default `5555`) |
-| `TMDB_API_KEY` | Free TMDB API key for recommendations ([get one here](https://www.themoviedb.org/settings/api)). Read when the launcher is built; without it the banner shows sample data |
+| `TMDB_API_KEY` | Free TMDB API key for recommendations ([get one here](https://www.themoviedb.org/settings/api)). Read when the launcher is built; without it Home's banner shows the focused app (its name, banner and a glow in its color) instead of recommendations |
 | `TMDB_REGION` | Optional two-letter country for streaming availability (`MX`, `US`…). Empty detects it from the TV's time zone |
 
 Never commit `.env`. Only `.env.example` belongs in the repository.

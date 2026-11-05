@@ -25,6 +25,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -64,7 +67,7 @@ fun LauncherRoot(viewModel: LauncherViewModel, navigation: Flow<Tab>, initialTab
     val homeApps = remember(apps, layout) { AppsRepository.homeOrder(apps, layout) }
 
     var tab by rememberSaveable { mutableStateOf(initialTab) }
-    var backdropUrl by remember { mutableStateOf<String?>(null) }
+    var backdrop by remember { mutableStateOf<BackdropContent?>(null) }
     val listState = rememberLazyListState()
     val firstApp = remember { FocusRequester() }
     val firstGridApp = remember { FocusRequester() }
@@ -116,7 +119,7 @@ fun LauncherRoot(viewModel: LauncherViewModel, navigation: Flow<Tab>, initialTab
 
     CompositionLocalProvider(LocalContentColor provides HackColors.Text) {
         Box(Modifier.fillMaxSize().background(HackColors.Background)) {
-            Backdrop(url = if (tab == Tab.HOME) backdropUrl else null)
+            Backdrop(content = if (tab == Tab.HOME) backdrop else null)
             Scrims()
             when (tab) {
                 Tab.HOME -> HomeScreen(
@@ -126,7 +129,7 @@ fun LauncherRoot(viewModel: LauncherViewModel, navigation: Flow<Tab>, initialTab
                     recommendations = recommendations,
                     listState = listState,
                     firstAppRequester = firstApp,
-                    onBackdrop = { backdropUrl = it },
+                    onBackdrop = { backdrop = it },
                     onOpen = ::open,
                     onMessage = ::message,
                     onSaveOrder = viewModel::saveOrder,
@@ -144,6 +147,7 @@ fun LauncherRoot(viewModel: LauncherViewModel, navigation: Flow<Tab>, initialTab
                     firstRequester = firstSetting,
                     onOpen = ::open,
                     onMessage = ::message,
+                    onToggleKeys = viewModel::toggleKeyService,
                 )
             }
             TopBar(
@@ -156,9 +160,9 @@ fun LauncherRoot(viewModel: LauncherViewModel, navigation: Flow<Tab>, initialTab
                 },
                 modifier = Modifier.align(Alignment.TopCenter),
             )
-            if (tab == Tab.HOME) {
+            if (tab == Tab.HOME && recommendations.fromTmdb) {
                 Text(
-                    stringResource(if (recommendations.fromTmdb) R.string.tmdb_credit else R.string.sample_credit),
+                    stringResource(R.string.tmdb_credit),
                     fontSize = 7.sp,
                     color = Color(0x4DFFFFFF),
                     modifier = Modifier.align(Alignment.TopStart).padding(start = 66.dp, top = 61.dp),
@@ -168,27 +172,54 @@ fun LauncherRoot(viewModel: LauncherViewModel, navigation: Flow<Tab>, initialTab
     }
 }
 
-/** Full-screen artwork of the current recommendation, or a soft glow on the other pages. */
+/** What fills the screen behind Home: a recommendation's artwork, or a glow in the focused app's color. */
+sealed interface BackdropContent {
+    data class Image(val url: String) : BackdropContent
+    data class Glow(val color: Color) : BackdropContent
+}
+
+/** Full-screen artwork of the current recommendation, a glow in an app's color, or a soft default glow. */
 @Composable
-private fun Backdrop(url: String?) {
+private fun Backdrop(content: BackdropContent?) {
     val context = LocalContext.current
-    Crossfade(targetState = url, animationSpec = tween(800), label = "backdrop") { current ->
-        if (current != null) {
-            AsyncImage(
-                model = ImageRequest.Builder(context).data(current).size(1280, 720).build(),
+    Crossfade(targetState = content, animationSpec = tween(800), label = "backdrop") { current ->
+        when (current) {
+            is BackdropContent.Image -> AsyncImage(
+                model = ImageRequest.Builder(context).data(current.url).size(1280, 720).build(),
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
                 alignment = Alignment.CenterEnd,
                 modifier = Modifier.fillMaxSize(),
             )
-        } else {
-            Box(
-                Modifier.fillMaxSize().background(
-                    Brush.radialGradient(listOf(Color(0xCC24384C), Color.Transparent)),
-                ),
-            )
+            is BackdropContent.Glow -> Glow(current.color)
+            null -> Glow(Color(0xFF24384C))
         }
     }
+}
+
+/** Two soft radial glows, as in the mockup: a bright one behind the artwork and a dark one at the bottom right. */
+@Composable
+private fun Glow(color: Color) {
+    val deep = lerp(color, Color.Black, 0.65f)
+    Box(
+        Modifier.fillMaxSize().drawBehind {
+            drawRect(Color(0xFF07080B))
+            drawRect(
+                Brush.radialGradient(
+                    listOf(color.copy(alpha = 0.85f), Color.Transparent),
+                    center = Offset(size.width * 0.74f, size.height * 0.36f),
+                    radius = size.width * 0.52f,
+                ),
+            )
+            drawRect(
+                Brush.radialGradient(
+                    listOf(deep.copy(alpha = 0.8f), Color.Transparent),
+                    center = Offset(size.width, size.height),
+                    radius = size.width * 0.47f,
+                ),
+            )
+        },
+    )
 }
 
 /** Dark gradients from the left and the bottom, so text stays readable over any artwork. */

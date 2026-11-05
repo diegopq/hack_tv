@@ -14,7 +14,6 @@ import io.github.diegopq.hacktv.data.HomeLayoutStore
 import io.github.diegopq.hacktv.data.Inputs
 import io.github.diegopq.hacktv.data.LauncherApp
 import io.github.diegopq.hacktv.data.RecommendationSet
-import io.github.diegopq.hacktv.data.SampleContent
 import io.github.diegopq.hacktv.data.Tmdb
 import io.github.diegopq.hacktv.data.TvInputItem
 import io.github.diegopq.hacktv.keys.RemoteKeys
@@ -34,8 +33,8 @@ class LauncherViewModel(application: Application) : AndroidViewModel(application
     private val _inputs = MutableStateFlow<List<TvInputItem>>(emptyList())
     val inputs: StateFlow<List<TvInputItem>> = _inputs.asStateFlow()
 
-    /** The banner's recommendations: TMDB when a key is set and the network answers, the samples otherwise. */
-    private val _recommendations = MutableStateFlow(SampleContent.set())
+    /** The banner's recommendations from TMDB; [RecommendationSet.NONE] without a key or before the first download. */
+    private val _recommendations = MutableStateFlow(RecommendationSet.NONE)
     val recommendations: StateFlow<RecommendationSet> = _recommendations.asStateFlow()
     private var recommendationsJob: Job? = null
     private var recommendationsFor: Set<String> = emptySet()
@@ -114,6 +113,21 @@ class LauncherViewModel(application: Application) : AndroidViewModel(application
         val updated = change(_layout.value)
         _layout.value = updated
         HomeLayoutStore.save(getApplication(), updated)
+    }
+
+    /**
+     * Turns the remote buttons on or off from the launcher's Settings card. Returns the new state, or null
+     * when the launcher can't change the setting itself (no WRITE_SECURE_SETTINGS): then the TV's
+     * Accessibility settings have to be opened instead.
+     */
+    fun toggleKeyService(): Boolean? {
+        val context = getApplication<Application>()
+        if (!RemoteKeys.canWriteSettings(context)) return null
+        val turnOn = !RemoteKeys.isEnabled(context)
+        RemoteKeys.setWanted(context, turnOn)
+        if (turnOn) RemoteKeys.enable(context) else RemoteKeys.disable(context)
+        refreshKeyService()
+        return turnOn
     }
 
     fun refreshKeyService() {

@@ -1,6 +1,7 @@
 package io.github.diegopq.hacktv
 
 import android.app.Application
+import io.github.diegopq.hacktv.keys.KeyServiceGuard
 import coil3.ImageLoader
 import coil3.PlatformContext
 import coil3.SingletonImageLoader
@@ -10,6 +11,13 @@ import okio.Path.Companion.toOkioPath
 import coil3.disk.DiskCache
 
 class HackTvApp : Application(), SingletonImageLoader.Factory {
+
+    override fun onCreate() {
+        super.onCreate()
+        // Only in the launcher's own process, not in the ":keys" process that runs the key service.
+        if (getProcessName() == packageName) KeyServiceGuard.start(this)
+    }
+
 
     /** Small caches: the TV has little RAM, and the banner only needs a handful of images at a time. */
     override fun newImageLoader(context: PlatformContext): ImageLoader =

@@ -50,6 +50,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -112,7 +113,7 @@ fun HomeScreen(
     recommendations: RecommendationSet,
     listState: LazyListState,
     firstAppRequester: FocusRequester,
-    onBackdrop: (String) -> Unit,
+    onBackdrop: (BackdropContent) -> Unit,
     onOpen: (Intent) -> Unit,
     onMessage: (Int) -> Unit,
     onSaveOrder: (List<String>) -> Unit,
@@ -175,7 +176,17 @@ fun HomeScreen(
     }
     BackHandler(enabled = movingPackage != null) { finishMove() }
 
-    LaunchedEffect(rec?.imageUrl) { rec?.let { onBackdrop(it.imageUrl) } }
+    // Without recommendations the banner shows the focused app of My apps instead.
+    var spotlightPackage by remember { mutableStateOf<String?>(null) }
+    val spotlight = homeApps.firstOrNull { it.packageName == spotlightPackage } ?: homeApps.firstOrNull()
+    val showRecommendations = rec != null
+
+    LaunchedEffect(rec?.imageUrl, spotlight?.packageName, showRecommendations) {
+        when {
+            rec != null -> onBackdrop(BackdropContent.Image(rec.imageUrl))
+            spotlight != null -> onBackdrop(BackdropContent.Glow(Color(spotlight.accent ?: 0xFF24384C.toInt())))
+        }
+    }
     LaunchedEffect(slide, recs) {
         delay(9_000)
         if (recs.isNotEmpty()) slide = (slide + 1).mod(recs.size)
@@ -189,6 +200,19 @@ fun HomeScreen(
         contentPadding = PaddingValues(bottom = 48.dp),
         modifier = Modifier.padding(top = TOP_BAR_HEIGHT),
     ) {
+        if (rec == null && spotlight != null) item(key = "hero") {
+            AppSpotlight(
+                app = spotlight,
+                onOpen = { onOpen(AppsRepository.launchIntent(context, spotlight)) },
+                onInfo = { onOpen(appInfoIntent(spotlight.packageName)) },
+                modifier = Modifier
+                    .onFocusChanged { if (it.hasFocus) showBanner() }
+                    .graphicsLayer {
+                        alpha = if (listState.firstVisibleItemIndex > 0) 0f
+                        else 1f - (listState.firstVisibleItemScrollOffset / fadeDistance).coerceIn(0f, 1f)
+                    },
+            )
+        }
         if (rec != null) item(key = "hero") {
             Hero(
                 recommendation = rec,
@@ -260,6 +284,7 @@ fun HomeScreen(
                             },
                         onFocused = {
                             showBanner()
+                            spotlightPackage = app.packageName
                         },
                     )
                 }
@@ -422,6 +447,7 @@ fun SettingsScreen(
     firstRequester: FocusRequester,
     onOpen: (Intent) -> Unit,
     onMessage: (Int) -> Unit,
+    onToggleKeys: () -> Boolean?,
 ) {
     val context = LocalContext.current
     Column(Modifier.fillMaxSize().padding(top = 93.dp)) {
@@ -442,8 +468,12 @@ fun SettingsScreen(
                     title = stringResource(R.string.sc_keys),
                     subtitle = stringResource(if (keyServiceOn) R.string.sc_keys_on else R.string.sc_keys_off),
                     onClick = {
-                        if (keyServiceOn) onMessage(R.string.keys_already_on)
-                        else onOpen(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                        when (onToggleKeys()) {
+                            true -> onMessage(R.string.keys_turned_on)
+                            false -> onMessage(R.string.keys_turned_off)
+                            // The launcher can't change it itself: the TV's Accessibility page can.
+                            null -> onOpen(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                        }
                     },
                     modifier = Modifier.fillMaxWidth().height(110.dp).focusRequester(firstRequester),
                 )

@@ -29,6 +29,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
@@ -152,6 +154,94 @@ fun Hero(
         }
         Spacer(Modifier.height(15.dp))
         Dots(count = count, index = index)
+    }
+}
+
+/**
+ * Home's banner without recommendations (no TMDB key, or nothing downloaded yet): the focused app in large
+ * type, its banner on a tilted card, and a glow in its color behind, as in the first mockup.
+ */
+@Composable
+fun AppSpotlight(
+    app: LauncherApp,
+    onOpen: () -> Unit,
+    onInfo: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Box(modifier.fillMaxWidth().heightIn(min = 270.dp)) {
+        Column(Modifier.padding(start = 60.dp, top = 23.dp, end = 60.dp)) {
+            AnimatedContent(
+                targetState = app,
+                transitionSpec = { fadeIn(tween(260)) togetherWith fadeOut(tween(160)) },
+                contentKey = { it.packageName },
+                label = "spotlight-text",
+            ) { a ->
+                Column(Modifier.widthIn(max = 470.dp).heightIn(min = 120.dp)) {
+                    Text(
+                        stringResource(R.string.row_my_apps).uppercase(),
+                        fontSize = 10.5.sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 1.6.sp,
+                        color = HackColors.Muted,
+                    )
+                    Spacer(Modifier.height(9.dp))
+                    val titleSize = if (a.label.length <= 16) 46.sp else 36.sp
+                    Text(
+                        a.label,
+                        fontSize = titleSize,
+                        lineHeight = titleSize * 1.06f,
+                        fontWeight = FontWeight.ExtraBold,
+                        letterSpacing = (-1.2).sp,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    a.description?.let {
+                        Spacer(Modifier.height(7.dp))
+                        Text(
+                            it,
+                            fontSize = 13.sp,
+                            lineHeight = 18.sp,
+                            color = HackColors.Muted,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.widthIn(max = 380.dp),
+                        )
+                    }
+                }
+            }
+            Spacer(Modifier.height(16.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                HeroButton(text = stringResource(R.string.open_app), icon = R.drawable.ic_play, primary = true, onClick = onOpen)
+                HeroButton(text = stringResource(R.string.menu_info), icon = R.drawable.ic_info, primary = false, onClick = onInfo)
+            }
+        }
+        AnimatedContent(
+            targetState = app,
+            transitionSpec = { fadeIn(tween(320)) togetherWith fadeOut(tween(200)) },
+            contentKey = { it.packageName },
+            label = "spotlight-art",
+            modifier = Modifier.align(Alignment.TopEnd).padding(top = 18.dp, end = 75.dp),
+        ) { a ->
+            val shape = RoundedCornerShape(15.dp)
+            Box(
+                modifier = Modifier
+                    .size(350.dp, 197.dp)
+                    .graphicsLayer {
+                        rotationY = -16f
+                        rotationX = 3f
+                        cameraDistance = 14 * density
+                    }
+                    .shadow(28.dp, shape)
+                    .clip(shape)
+                    .background(Color(0xFF16181D)),
+                contentAlignment = Alignment.Center,
+            ) {
+                when {
+                    a.banner != null -> Image(a.banner, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
+                    a.icon != null -> Image(a.icon, contentDescription = null, modifier = Modifier.size(96.dp))
+                }
+            }
+        }
     }
 }
 

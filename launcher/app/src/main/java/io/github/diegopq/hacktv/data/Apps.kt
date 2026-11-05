@@ -22,6 +22,10 @@ data class LauncherApp(
     val icon: ImageBitmap?,
     /** True when the app has a TV (Leanback) launcher entry. */
     val isTvApp: Boolean,
+    /** The most vivid color of its banner or icon (ARGB), for Home's ambient glow. */
+    val accent: Int? = null,
+    /** The app's own description, when it ships one. */
+    val description: String? = null,
 )
 
 /** Streaming apps, by package name, in the order they go first on Home. */
@@ -60,11 +64,14 @@ object AppsRepository {
                 val activity = info.activityInfo ?: continue
                 val pkg = activity.packageName
                 if (pkg in HIDDEN_PACKAGES || !seen.add(pkg)) continue
-                val banner = runCatching { activity.loadBanner(pm) ?: activity.applicationInfo.loadBanner(pm) }
-                    .getOrNull()?.toImageBitmap(BANNER_W, BANNER_H)
-                val icon = if (banner == null) {
-                    runCatching { info.loadIcon(pm) }.getOrNull()?.toImageBitmap(ICON_SIZE, ICON_SIZE)
+                val bannerBitmap = runCatching { activity.loadBanner(pm) ?: activity.applicationInfo.loadBanner(pm) }
+                    .getOrNull()?.renderBitmap(BANNER_W, BANNER_H)
+                val iconBitmap = if (bannerBitmap == null) {
+                    runCatching { info.loadIcon(pm) }.getOrNull()?.renderBitmap(ICON_SIZE, ICON_SIZE)
                 } else null
+                val banner = bannerBitmap?.asImageBitmap()
+                val icon = iconBitmap?.asImageBitmap()
+                val accent = (bannerBitmap ?: iconBitmap)?.let(::accentColor)
                 apps += LauncherApp(
                     packageName = pkg,
                     component = ComponentName(pkg, activity.name),
@@ -72,6 +79,9 @@ object AppsRepository {
                     banner = banner,
                     icon = icon,
                     isTvApp = isTv,
+                    accent = accent,
+                    description = runCatching { activity.applicationInfo.loadDescription(pm)?.toString() }
+                        .getOrNull()?.takeIf { it.isNotBlank() },
                 )
             }
         }
@@ -106,8 +116,28 @@ object AppsRepository {
 }
 
 /** Draws a drawable into a bitmap no larger than the given size, keeping banners sharp but small in memory. */
-private fun Drawable.toImageBitmap(maxW: Int, maxH: Int): ImageBitmap? {
+private fun Drawable.renderBitmap(maxW: Int, maxH: Int): Bitmap? {
     val w = intrinsicWidth.takeIf { it > 0 }?.coerceAtMost(maxW * 2) ?: maxW
     val h = intrinsicHeight.takeIf { it > 0 }?.coerceAtMost(maxH * 2) ?: maxH
-    return runCatching { toBitmap(w, h, Bitmap.Config.ARGB_8888).asImageBitmap() }.getOrNull()
+    return runCatching { toBitmap(w, h, Bitmap.Config.ARGB_8888) }.getOrNull()
+}
+
+/**
+ * The most vivid color in a bitmap: Netflix's red, Disney+'s blue. Samples a 16x9 thumbnail and keeps the
+ * pixel with the most saturation and brightness, skipping transparent, near-white and near-black ones.
+ */
+private fun accentColor(bitmap: Bitmap): Int? {
+    val small = Bitmap.createScaledBitmap(bitmap, 16, 9, true)
+    val hsv = FloatArray(3)
+    var best: Int? = null
+    var bestScore = 0f
+    for (y in 0 until small.height) for (x in 0 until small.width) {
+        val c = small.getPixel(x, y)
+        if (android.graphics.Color.alpha(c) < 128) continue
+        android.graphics.Color.colorToHSV(c, hsv)
+        val score = hsv[1] * hsv[2]
+        if (hsv[2] > 0.15f && score > bestScore) { bestScore = score; best = c }
+    }
+    if (small !== bitmap) small.recycle()
+    return best?.takeIf { bestScore > 0.12f }
 }
