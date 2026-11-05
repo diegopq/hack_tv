@@ -84,21 +84,22 @@ class LauncherViewModel(application: Application) : AndroidViewModel(application
         // Wait for the app list: without it the launcher can't tell which services are installed.
         if (!Tmdb.isConfigured || _apps.value.isEmpty()) return
         val context = getApplication<Application>()
-        val installed = _apps.value.map { it.packageName }.toSet()
+        val apps = _apps.value
+        val installed = apps.map { it.packageName }.toSet()
         if (recommendationsJob?.isActive == true) {
             if (installed == recommendationsFor) return
             recommendationsJob?.cancel()   // the installed apps changed: start over with the new set
         }
         recommendationsFor = installed
         recommendationsJob = viewModelScope.launch {
-            val fresh = withContext(Dispatchers.IO) { Tmdb.cached(context, installed) }
+            val fresh = withContext(Dispatchers.IO) { Tmdb.cached(context, apps) }
             if (fresh != null) {
                 _recommendations.value = fresh
                 return@launch
             }
-            withContext(Dispatchers.IO) { Tmdb.cached(context, installed, allowStale = true) }
+            withContext(Dispatchers.IO) { Tmdb.cached(context, apps, allowStale = true) }
                 ?.let { _recommendations.value = it }
-            Tmdb.refresh(context, installed)?.let { _recommendations.value = it }
+            Tmdb.refresh(context, apps)?.let { _recommendations.value = it }
         }
     }
 

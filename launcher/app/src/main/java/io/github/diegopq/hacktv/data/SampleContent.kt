@@ -26,13 +26,21 @@ val PROVIDERS = listOf(
     Provider("appletv", "Apple TV", "com.apple.atve.androidtv.appletv", 0xFF2C2C2E, listOf(350)),
 ).associateBy { it.key }
 
+/** The badge color for a service; services matched by name get a neutral one. */
+fun providerColor(key: String): Long = PROVIDERS[key]?.color ?: 0xFF3A3F47
+
 /** The four services the banner falls back to when none of the known apps is installed. */
 val DEFAULT_PROVIDERS = listOf("netflix", "prime", "disney", "max")
 
 /** A movie or series for the recommendations banner, already in the TV's language. */
 data class Recommendation(
     val id: String,
+    /** The service's key: a known one ("netflix") or "tmdb:<id>" for one matched by the app's name. */
     val provider: String,
+    /** The service's name as shown on the banner ("Disponible en …"). */
+    val providerName: String,
+    /** The package of the installed app that plays it, opened by "Ver en …". */
+    val providerPackage: String,
     val title: String,
     val year: Int?,
     val genres: String,
@@ -79,6 +87,8 @@ private class SampleShow(
     fun localized(spanish: Boolean) = Recommendation(
         id = id,
         provider = provider,
+        providerName = PROVIDERS.getValue(provider).name,
+        providerPackage = PROVIDERS.getValue(provider).packageName,
         title = if (spanish) title.first else title.second,
         year = year,
         genres = if (spanish) genres.first else genres.second,

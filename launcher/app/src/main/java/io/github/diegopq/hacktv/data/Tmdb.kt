@@ -19,7 +19,8 @@ import java.util.Locale
 
 /**
  * Recommendations from TMDB: popular, recent movies and series on each streaming service
- * the TV has installed (and only those), in the TV's language and country.
+ * the TV has installed (and only those), in the TV's language and country. Services are found
+ * by matching installed apps' names against TMDB's list of services for the country.
  *
  * Results are cached on disk and refreshed every few hours, so the TV makes about a dozen
  * small requests at most a few times a day. This product uses the TMDB API but is not
@@ -31,30 +32,30 @@ object Tmdb {
     private const val API = "https://api.themoviedb.org/3"
     private const val IMAGES = "https://image.tmdb.org/t/p/w1280"
     private const val PER_SERVICE = 10
-    private const val MIX_SIZE = 8
+    private const val MIN_PER_KIND = 3
     private const val MAX_AGE_MS = 6 * 60 * 60 * 1000L
 
     val isConfigured: Boolean get() = BuildConfig.TMDB_API_KEY.isNotBlank()
 
-    /** The cached set when it's fresh enough for [installedPackages], or null. */
-    fun cached(context: Context, installedPackages: Set<String>, allowStale: Boolean = false): RecommendationSet? {
+    /** The cached set when it's fresh enough for the installed [apps], or null. */
+    fun cached(context: Context, apps: List<LauncherApp>, allowStale: Boolean = false): RecommendationSet? {
         val file = cacheFile(context)
         if (!file.exists()) return null
         return runCatching {
             val json = JSONObject(file.readText())
-            val sameQuery = json.optString("query") == queryKey(installedPackages)
+            val sameQuery = json.optString("query") == queryKey(apps)
             val fresh = System.currentTimeMillis() - json.optLong("time") < MAX_AGE_MS
             if (!sameQuery || (!fresh && !allowStale)) null else decode(json.getJSONObject("sets"))
         }.getOrNull()
     }
 
     /** Downloads a new set and caches it. Returns null when the network or the key fails. */
-    suspend fun refresh(context: Context, installedPackages: Set<String>): RecommendationSet? = withContext(Dispatchers.IO) {
+    suspend fun refresh(context: Context, apps: List<LauncherApp>): RecommendationSet? = withContext(Dispatchers.IO) {
         if (!isConfigured) return@withContext null
         try {
             val language = languageTag()
             val region = region()
-            val services = servicesFor(installedPackages)
+            val services = servicesFor(apps, serviceCatalog(region))
             val genres = coroutineScope {
                 val tv = async { genreNames("tv", language) }
                 val movie = async { genreNames("movie", language) }
@@ -71,13 +72,11 @@ object Tmdb {
             }.filter { it.second.isNotEmpty() }.toMap()
             if (lists.isEmpty()) return@withContext null
 
-            val byKey = lists.toMutableMap()
-            byKey[SampleContent.MIX] = mix(services.mapNotNull { lists[it.key] })
-            val set = RecommendationSet(byKey, fromTmdb = true)
+            val set = RecommendationSet(lists, fromTmdb = true)
             cacheFile(context).writeText(
                 JSONObject()
                     .put("time", System.currentTimeMillis())
-                    .put("query", queryKey(installedPackages))
+                    .put("query", queryKey(apps))
                     .put("sets", encode(set))
                     .toString(),
             )
@@ -88,11 +87,61 @@ object Tmdb {
         }
     }
 
-    /** Services whose app is installed; the four big ones when none is (so the banner is never empty). */
-    private fun servicesFor(installedPackages: Set<String>): List<Provider> {
-        val installed = PROVIDERS.values.filter { it.packageName in installedPackages }
-        return installed.ifEmpty { DEFAULT_PROVIDERS.mapNotNull { PROVIDERS[it] } }
+    /**
+     * The services to recommend from: the known ones whose app is installed, plus any installed app whose
+     * name matches a service in TMDB's list for the country ("Mercado Play", "Runtime", "Pluto TV"...).
+     * The known list stays for apps whose name differs from TMDB's ("Prime Video" is "Amazon Prime
+     * Video" there). With nothing installed, the four big ones, so the banner is never empty.
+     */
+    private fun servicesFor(apps: List<LauncherApp>, catalog: Map<Int, String>): List<Provider> {
+        val packages = apps.map { it.packageName }.toSet()
+        val known = PROVIDERS.values.filter { it.packageName in packages }
+        val takenIds = known.flatMap { it.tmdbIds }.toMutableSet()
+        val takenPackages = known.map { it.packageName }.toSet()
+        val matched = apps.filter { it.packageName !in takenPackages }.mapNotNull { app ->
+            val entry = catalog.entries.firstOrNull { (id, name) -> id !in takenIds && sameService(app.label, name) }
+                ?: return@mapNotNull null
+            takenIds += entry.key
+            Provider(
+                key = "tmdb:${entry.key}",
+                name = app.label,
+                packageName = app.packageName,
+                color = 0xFF3A3F47,
+                tmdbIds = listOf(entry.key),
+            )
+        }
+        return (known + matched).ifEmpty { DEFAULT_PROVIDERS.mapNotNull { PROVIDERS[it] } }
     }
+
+    /** Every streaming service TMDB lists for the country, by id: "Mercado Play", "Runtime"... */
+    private fun serviceCatalog(region: String): Map<Int, String> {
+        val out = LinkedHashMap<Int, String>()
+        for (type in listOf("tv", "movie")) {
+            val results = get("/watch/providers/$type", mapOf("watch_region" to region)).optJSONArray("results") ?: continue
+            for (i in 0 until results.length()) {
+                val p = results.getJSONObject(i)
+                val name = p.optString("provider_name")
+                // Channels sold inside another app ("MUBI Amazon Channel") aren't apps of their own.
+                if (name.isNotBlank() && !name.contains("channel", ignoreCase = true)) out[p.getInt("provider_id")] = name
+            }
+        }
+        return out
+    }
+
+    /** "Disney+" and "Disney Plus", "Tubi" and "Tubi TV", "ViX" and "VIX " are the same service. */
+    private fun sameService(appLabel: String, serviceName: String): Boolean {
+        val a = normalize(appLabel)
+        val b = normalize(serviceName)
+        if (a.length < 3 || b.length < 3) return false
+        return a == b || (a.removeSuffix("tv").length >= 3 && a.removeSuffix("tv") == b.removeSuffix("tv"))
+    }
+
+    private fun normalize(name: String): String =
+        java.text.Normalizer.normalize(name, java.text.Normalizer.Form.NFD)
+            .replace(Regex("\\p{M}+"), "")
+            .lowercase(Locale.ROOT)
+            .replace("+", "plus")
+            .replace(Regex("[^a-z0-9]"), "")
 
     private fun discover(
         type: String,
@@ -102,21 +151,36 @@ object Tmdb {
         genreNames: Map<Int, String>,
     ): List<Recommendation> {
         // Popular titles from the last three years: plain popularity returns decades-old catalog shows.
-        val since = LocalDate.now().minusYears(3).toString()
-        val dateParam = if (type == "tv") "first_air_date.gte" else "primary_release_date.gte"
-        val json = get(
-            "/discover/$type",
-            mapOf(
-                "watch_region" to region,
-                "with_watch_providers" to provider.tmdbIds.joinToString("|"),
-                "with_watch_monetization_types" to "flatrate|free|ads",
-                "language" to language,
-                "sort_by" to "popularity.desc",
-                "vote_count.gte" to "100",
-                "include_adult" to "false",
-                dateParam to since,
-            ),
+        val recent = discoverPage(type, provider, language, region, genreNames, recentOnly = true)
+        if (recent.size >= MIN_PER_KIND) return recent
+        // Small or classic catalogs (Runtime, Mercado Play) have few recent, much-voted titles:
+        // fill up with their popular titles of any year.
+        val any = discoverPage(type, provider, language, region, genreNames, recentOnly = false)
+        return (recent + any).distinctBy { it.id }
+    }
+
+    private fun discoverPage(
+        type: String,
+        provider: Provider,
+        language: String,
+        region: String,
+        genreNames: Map<Int, String>,
+        recentOnly: Boolean,
+    ): List<Recommendation> {
+        val params = mutableMapOf(
+            "watch_region" to region,
+            "with_watch_providers" to provider.tmdbIds.joinToString("|"),
+            "with_watch_monetization_types" to "flatrate|free|ads",
+            "language" to language,
+            "sort_by" to "popularity.desc",
+            "vote_count.gte" to if (recentOnly) "100" else "20",
+            "include_adult" to "false",
         )
+        if (recentOnly) {
+            val dateParam = if (type == "tv") "first_air_date.gte" else "primary_release_date.gte"
+            params[dateParam] = LocalDate.now().minusYears(3).toString()
+        }
+        val json = get("/discover/$type", params)
         val results = json.optJSONArray("results") ?: return emptyList()
         return (0 until results.length()).mapNotNull { i ->
             val item = results.getJSONObject(i)
@@ -128,6 +192,8 @@ object Tmdb {
             Recommendation(
                 id = "$type:${item.getInt("id")}",
                 provider = provider.key,
+                providerName = provider.name,
+                providerPackage = provider.packageName,
                 title = title,
                 year = date.take(4).toIntOrNull(),
                 genres = (0 until genreIds.length()).mapNotNull { genreNames[genreIds.getInt(it)] }.take(2).joinToString(", "),
@@ -165,17 +231,6 @@ object Tmdb {
     private fun interleave(a: List<Recommendation>, b: List<Recommendation>): List<Recommendation> =
         (0 until maxOf(a.size, b.size)).flatMap { listOfNotNull(a.getOrNull(it), b.getOrNull(it)) }
 
-    /** Takes one title from each service in turn. */
-    private fun mix(lists: List<List<Recommendation>>): List<Recommendation> {
-        val out = ArrayList<Recommendation>()
-        var round = 0
-        while (out.size < MIX_SIZE && lists.any { it.size > round }) {
-            lists.forEach { list -> list.getOrNull(round)?.let { if (out.none { o -> o.id == it.id }) out += it } }
-            round++
-        }
-        return out.take(MIX_SIZE)
-    }
-
     private fun languageTag(): String {
         val locale = Locale.getDefault()
         return if (locale.country.isNotBlank()) "${locale.language}-${locale.country}" else locale.language
@@ -193,9 +248,9 @@ object Tmdb {
         return (fromTimeZone ?: Locale.getDefault().country.ifBlank { "MX" }).uppercase()
     }
 
-    /** The cache is only valid for the same language, country and installed services. */
-    private fun queryKey(installedPackages: Set<String>): String =
-        "v4|${languageTag()}|${region()}|" + servicesFor(installedPackages).joinToString(",") { it.key }
+    /** The cache is only valid for the same language, country and installed apps. */
+    private fun queryKey(apps: List<LauncherApp>): String =
+        "v5|${languageTag()}|${region()}|" + apps.map { it.packageName }.sorted().joinToString(",").hashCode()
 
     private fun cacheFile(context: Context) = File(context.cacheDir, "tmdb-recommendations.json")
 
@@ -205,7 +260,8 @@ object Tmdb {
                 list.forEach { r ->
                     put(
                         JSONObject()
-                            .put("id", r.id).put("provider", r.provider).put("title", r.title)
+                            .put("id", r.id).put("provider", r.provider).put("providerName", r.providerName)
+                            .put("providerPackage", r.providerPackage).put("title", r.title)
                             .put("year", r.year ?: 0).put("genres", r.genres).put("description", r.description)
                             .put("image", r.imageUrl).put("movie", r.isMovie),
                     )
@@ -222,6 +278,8 @@ object Tmdb {
                 Recommendation(
                     id = o.getString("id"),
                     provider = o.getString("provider"),
+                    providerName = o.getString("providerName"),
+                    providerPackage = o.getString("providerPackage"),
                     title = o.getString("title"),
                     year = o.optInt("year").takeIf { it > 0 },
                     genres = o.optString("genres"),

@@ -64,7 +64,6 @@ import io.github.diegopq.hacktv.R
 import io.github.diegopq.hacktv.data.AppsRepository
 import io.github.diegopq.hacktv.data.Inputs
 import io.github.diegopq.hacktv.data.LauncherApp
-import io.github.diegopq.hacktv.data.PROVIDERS
 import io.github.diegopq.hacktv.data.RecommendationSet
 import io.github.diegopq.hacktv.data.SystemShortcut
 import io.github.diegopq.hacktv.data.TvInputItem
@@ -126,7 +125,7 @@ fun HomeScreen(
     var slide by remember(recommendations) { mutableIntStateOf(0) }
     val rec = recs.getOrNull(slide.mod(recs.size.coerceAtLeast(1)))
     val providerApp = remember(rec, allApps) {
-        val pkg = rec?.let { PROVIDERS[it.provider]?.packageName }
+        val pkg = rec?.providerPackage
         allApps.firstOrNull { it.packageName == pkg }
     }
 
@@ -197,7 +196,7 @@ fun HomeScreen(
                 count = recs.size,
                 providerApp = providerApp,
                 onWatch = {
-                    val pkg = PROVIDERS[rec.provider]?.packageName.orEmpty()
+                    val pkg = rec.providerPackage
                     onOpen(
                         providerApp?.let { AppsRepository.launchIntent(context, it) }
                             ?: Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=$pkg"))

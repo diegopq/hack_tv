@@ -51,7 +51,7 @@ import androidx.tv.material3.Surface
 import androidx.tv.material3.Text
 import io.github.diegopq.hacktv.R
 import io.github.diegopq.hacktv.data.LauncherApp
-import io.github.diegopq.hacktv.data.PROVIDERS
+import io.github.diegopq.hacktv.data.providerColor
 import io.github.diegopq.hacktv.data.Recommendation
 import io.github.diegopq.hacktv.ui.theme.HackColors
 
@@ -72,7 +72,8 @@ fun Hero(
     modifier: Modifier = Modifier,
     watchRequester: FocusRequester = FocusRequester(),
 ) {
-    val provider = PROVIDERS.getValue(recommendation.provider)
+    val providerName = recommendation.providerName
+    val providerColor = Color(providerColor(recommendation.provider))
     val kind = stringResource(if (recommendation.isMovie) R.string.movie else R.string.series)
     Column(modifier.fillMaxWidth().heightIn(min = 270.dp).padding(start = 60.dp, top = 23.dp, end = 60.dp)) {
         AnimatedContent(
@@ -82,10 +83,10 @@ fun Hero(
         ) { rec ->
             Column(Modifier.widthIn(max = 520.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    ProviderBadge(color = Color(provider.color), name = provider.name, app = providerApp)
+                    ProviderBadge(color = providerColor, name = providerName, app = providerApp)
                     Spacer(Modifier.width(8.dp))
                     Text(
-                        stringResource(R.string.available_on, provider.name),
+                        stringResource(R.string.available_on, providerName),
                         fontSize = 10.5.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = HackColors.Muted,
@@ -129,7 +130,7 @@ fun Hero(
         Spacer(Modifier.height(16.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             HeroButton(
-                text = stringResource(if (providerApp != null) R.string.watch_on else R.string.get_app, provider.name),
+                text = stringResource(if (providerApp != null) R.string.watch_on else R.string.get_app, providerName),
                 icon = R.drawable.ic_play,
                 primary = true,
                 onClick = onWatch,
