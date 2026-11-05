@@ -147,6 +147,9 @@ fun HomeScreen(
 
     // Hold OK on an app for its menu; Move picks it up and the arrows carry it along the row.
     var menuApp by remember { mutableStateOf<LauncherApp?>(null) }
+    // Where focus goes once the menu closes: back to the app, or to its neighbor when it was hidden.
+    val tileRequesters = remember { mutableMapOf<String, FocusRequester>() }
+    var pendingFocus by remember { mutableStateOf<String?>(null) }
     var movingPackage by remember { mutableStateOf<String?>(null) }
     var movingOrder by remember { mutableStateOf(homeApps) }
     val rowApps = if (movingPackage != null) movingOrder else homeApps
@@ -245,6 +248,7 @@ fun HomeScreen(
                         moving = moving,
                         modifier = TileSize
                             .then(if (i == 0) Modifier.focusRequester(firstAppRequester) else Modifier)
+                            .focusRequester(tileRequesters.getOrPut(app.packageName) { FocusRequester() })
                             .onPreviewKeyEvent { event ->
                                 if (!moving) return@onPreviewKeyEvent false
                                 when (event.key) {
@@ -320,12 +324,24 @@ fun HomeScreen(
             canMove = true,
             onMove = { startMove(app) },
             onToggleHidden = {
+                val index = homeApps.indexOfFirst { it.packageName == app.packageName }
+                pendingFocus = (homeApps.getOrNull(index + 1) ?: homeApps.getOrNull(index - 1))?.packageName
                 onHide(app.packageName)
                 Toast.makeText(context, context.getString(R.string.hidden_toast, app.label), Toast.LENGTH_LONG).show()
             },
             onInfo = { onOpen(appInfoIntent(app.packageName)) },
-            onDismiss = { menuApp = null },
+            onDismiss = {
+                menuApp = null
+                pendingFocus = app.packageName
+            },
         )
+    }
+    LaunchedEffect(pendingFocus, rowApps) {
+        val target = pendingFocus ?: return@LaunchedEffect
+        if (rowApps.none { it.packageName == target }) return@LaunchedEffect
+        delay(50)   // let the dialog close and the row settle
+        runCatching { tileRequesters[target]?.requestFocus() }
+        pendingFocus = null
     }
 }
 
@@ -340,6 +356,8 @@ fun AppsScreen(
 ) {
     val context = LocalContext.current
     var menuApp by remember { mutableStateOf<LauncherApp?>(null) }
+    val tileRequesters = remember { mutableMapOf<String, FocusRequester>() }
+    var pendingFocus by remember { mutableStateOf<String?>(null) }
     Column(Modifier.fillMaxSize().padding(top = 93.dp)) {
         PageTitle(
             title = stringResource(R.string.all_apps),
@@ -360,7 +378,8 @@ fun AppsScreen(
                         onClick = { onOpen(AppsRepository.launchIntent(context, app)) },
                         onLongClick = { menuApp = app },
                         modifier = Modifier.fillMaxWidth().aspectRatio(16f / 9f)
-                            .then(if (i == 0) Modifier.focusRequester(firstRequester) else Modifier),
+                            .then(if (i == 0) Modifier.focusRequester(firstRequester) else Modifier)
+                            .focusRequester(tileRequesters.getOrPut(app.packageName) { FocusRequester() }),
                     )
                     Spacer(Modifier.height(7.dp))
                     Text(
@@ -385,8 +404,18 @@ fun AppsScreen(
             onMove = {},
             onToggleHidden = { onSetHidden(app.packageName, !isHidden) },
             onInfo = { onOpen(appInfoIntent(app.packageName)) },
-            onDismiss = { menuApp = null },
+            onDismiss = {
+                menuApp = null
+                pendingFocus = app.packageName
+            },
         )
+    }
+    // Hiding here keeps the app on the page, so focus goes back to it once the menu closes.
+    LaunchedEffect(pendingFocus) {
+        val target = pendingFocus ?: return@LaunchedEffect
+        delay(50)
+        runCatching { tileRequesters[target]?.requestFocus() }
+        pendingFocus = null
     }
 }
 
