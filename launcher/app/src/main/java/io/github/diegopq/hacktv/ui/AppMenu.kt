@@ -74,10 +74,13 @@ fun AppMenu(
         Column(
             modifier = Modifier
                 .onPreviewKeyEvent { event ->
-                    when (event.type) {
-                        KeyEventType.KeyDown -> { armed = true; false }
-                        KeyEventType.KeyUp -> !armed
-                        else -> false
+                    // While OK is held, Android keeps sending repeated key-downs: those come from the
+                    // press that opened the menu too, so only a fresh press (repeat 0) arms it.
+                    val fresh = event.nativeKeyEvent.repeatCount == 0
+                    when {
+                        armed -> false
+                        event.type == KeyEventType.KeyDown && fresh -> { armed = true; false }
+                        else -> true
                     }
                 }
                 .width(270.dp)
