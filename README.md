@@ -84,6 +84,68 @@ cp .env.example .env
 
 Never commit `.env`. Only `.env.example` belongs in the repository.
 
+## Enable network debugging on your TV
+
+`adb` lets your computer, or an AI agent running on it, control the TV over Wi-Fi. Menu names change a little between brands and Android TV versions.
+
+1. **Turn on Developer options.** Go to **Settings → System → About** (on older Android TV: **Settings → Device Preferences → About**). Select **Android TV OS build** (or **Build**) 7 times, until you see "You are now a developer".
+2. **Turn on debugging.** Go back to **Settings → System → Developer options** and turn on **USB debugging**. If you also see **Network debugging** or **ADB over network**, turn it on too.
+3. **Find the TV's IP address.** Go to **Settings → Network & Internet** and select your Wi-Fi network. Write the IP down, for example `192.168.1.50`, and put it in `TV_IP` in your `.env`.
+4. **Install adb on your computer.** Download [Android platform-tools](https://developer.android.com/tools/releases/platform-tools), or on macOS run `brew install android-platform-tools`.
+5. **Connect.** The TV and the computer must be on the same network:
+
+   ```bash
+   adb connect 192.168.1.50:5555
+   ```
+
+6. **Accept the prompt on the TV.** The TV asks *"Allow USB debugging?"*. Check **Always allow from this computer** and choose **OK**. Check that it worked:
+
+   ```bash
+   adb devices   # the TV should appear as "device", not "unauthorized"
+   ```
+
+**If `connect` fails:** some TVs use **Wireless debugging** with a pairing code instead. Open it in Developer options, choose **Pair device with pairing code**, then run `adb pair <IP>:<pairing port>` and enter the code. After that, run `adb connect <IP>:<port>` with the port shown on that screen.
+
+**Security:** only computers you approve on the TV can connect, but turn **USB debugging** off when you're done tweaking, especially on a shared network.
+
+## Optimize your TV with an AI agent
+
+You can hand the cleanup to an AI coding agent that can run commands on your computer, such as [Claude Code](https://claude.com/claude-code). First enable network debugging (previous section), then paste this prompt and replace `<TV_IP>` with your TV's IP:
+
+```text
+I want to speed up my Android TV and remove things I don't use. It's on my local network with adb network debugging enabled at <TV_IP>:5555. Use adb from this computer; if it isn't installed, tell me how to install it first.
+
+1. Connect and analyze
+   - Connect with adb and confirm the TV shows as "device". If it shows "unauthorized", ask me to accept the prompt on the TV.
+   - Report the model, Android version, CPU, RAM, free storage, and what is using the most memory and CPU (dumpsys meminfo, top, load average).
+   - List the installed packages and group them: system essentials, manufacturer extras, preinstalled apps, and apps I installed.
+
+2. Propose a plan before changing anything
+   - For every package you want to disable, explain in plain words what it does and what could stop working. Ask me to confirm each group, and ask which apps and features I actually use (casting/AirPlay, voice assistant, live TV tuner, manufacturer store, screensaver, etc.).
+   - Also propose performance tweaks: shorter animations (window_animation_scale, transition_animation_scale, animator_duration_scale) and a lower background process limit (device_config activity_manager max_cached_processes).
+   - Do not change anything until I approve.
+
+3. Apply the changes safely
+   - Only use reversible commands: "pm disable-user --user 0 <package>" and "settings put". Never uninstall system packages, never clear app data, and never touch Play Store, Google Play services, the system UI, input methods, or the TV's input/tuner services unless I ask.
+   - Before disabling anything, write a revert script (revert_tv.sh) that re-enables every package you disable and restores the original settings, and show it to me.
+   - Package changes are written to disk with a delay: wait about 30 seconds after the last change before rebooting.
+   - Disable in small groups. After each group, reboot and test with me: the home screen, every button on the remote (Home, Back, Settings, app shortcut buttons, volume), HDMI inputs, sound, and my streaming apps.
+
+4. Things that commonly break (learned on a Hisense Android TV)
+   - The remote's shortcut buttons (Settings, App list, YouTube, Prime Video, Disney+) are often handled by the stock launcher or by a manufacturer service (on Hisense, com.vt.tv.smartsense). Test the buttons after disabling launcher or manufacturer packages, and re-enable what's needed.
+   - Disabling the stock launcher (Google TV: com.google.android.apps.tv.launcherx) can leave a setup recovery screen as the home screen (com.google.android.tungsten.setupwraith). Don't disable the stock launcher until a replacement launcher is installed and set as home.
+   - Volume lag through a soundbar on HDMI-CEC/ARC comes from the soundbar, not the TV; don't try to fix it by disabling packages.
+
+5. Install the hack_tv launcher
+   - Check https://github.com/diegopq/hack_tv/releases for an APK. If there isn't a release yet, stop here and tell me.
+   - If there is one, download it, install it with "adb install", set it as the home app, and walk me through the permissions it needs (accessibility service for the remote buttons, notification access for "Recently played", usage access) on the TV screen. Don't enter any passwords or accounts for me.
+   - Test the home screen and remote buttons with me, and add any new changes to the revert script.
+
+At the end, give me a summary: what you changed, how much free memory there is compared to before, and how to undo everything with the revert script.
+```
+
+The prompt asks the agent to confirm before every change and to keep everything reversible. Read each step it proposes before you approve it.
+
 ## Revert the TV optimizations
 
 The optimizations disable some preinstalled packages (Hisense extras, AirPlay, Google ambient screensaver) and speed up animations. To undo them, run this with network debugging enabled on the TV and `TV_IP` set in `.env`:

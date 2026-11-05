@@ -84,6 +84,68 @@ cp .env.example .env
 
 Nunca subas `.env` al repositorio. Solo `.env.example` va en el repositorio.
 
+## Activar la depuración por red en tu TV
+
+`adb` permite que tu computadora, o un agente de IA que corra en ella, controle la TV por Wi-Fi. Los nombres de los menús cambian un poco según la marca y la versión de Android TV.
+
+1. **Activa las Opciones para desarrolladores.** Ve a **Configuración → Sistema → Información** (en Android TV más antiguo: **Configuración → Preferencias del dispositivo → Información**). Selecciona **Compilación del SO de Android TV** (o **Compilación**) 7 veces, hasta que aparezca "Ahora eres desarrollador".
+2. **Activa la depuración.** Regresa a **Configuración → Sistema → Opciones para desarrolladores** y activa **Depuración por USB**. Si también ves **Depuración por red** o **ADB por red**, actívala.
+3. **Busca la IP de la TV.** Ve a **Configuración → Red e Internet** y selecciona tu red Wi-Fi. Anota la IP, por ejemplo `192.168.1.50`, y ponla en `TV_IP` en tu `.env`.
+4. **Instala adb en tu computadora.** Descarga [Android platform-tools](https://developer.android.com/tools/releases/platform-tools), o en macOS ejecuta `brew install android-platform-tools`.
+5. **Conéctate.** La TV y la computadora deben estar en la misma red:
+
+   ```bash
+   adb connect 192.168.1.50:5555
+   ```
+
+6. **Acepta el aviso en la TV.** La TV pregunta *"¿Permitir la depuración por USB?"*. Marca **Permitir siempre desde esta computadora** y elige **Aceptar**. Comprueba que funcionó:
+
+   ```bash
+   adb devices   # la TV debe aparecer como "device", no como "unauthorized"
+   ```
+
+**Si `connect` falla:** algunas TVs usan **Depuración inalámbrica** con un código de vinculación. Ábrela en Opciones para desarrolladores, elige **Vincular dispositivo con código de vinculación**, ejecuta `adb pair <IP>:<puerto de vinculación>` y escribe el código. Después ejecuta `adb connect <IP>:<puerto>` con el puerto que muestra esa pantalla.
+
+**Seguridad:** solo se pueden conectar las computadoras que apruebes en la TV, pero desactiva la **Depuración por USB** cuando termines de hacer ajustes, sobre todo en una red compartida.
+
+## Optimiza tu TV con un agente de IA
+
+Puedes dejarle la limpieza a un agente de IA que pueda ejecutar comandos en tu computadora, como [Claude Code](https://claude.com/claude-code). Primero activa la depuración por red (sección anterior), luego pega este prompt y cambia `<TV_IP>` por la IP de tu TV:
+
+```text
+Quiero acelerar mi Android TV y quitar lo que no uso. Está en mi red local con la depuración por red de adb activada en <TV_IP>:5555. Usa adb desde esta computadora; si no está instalado, primero dime cómo instalarlo.
+
+1. Conéctate y analiza
+   - Conéctate con adb y confirma que la TV aparece como "device". Si aparece como "unauthorized", pídeme que acepte el aviso en la TV.
+   - Dime el modelo, la versión de Android, el procesador, la RAM, el almacenamiento libre y qué está usando más memoria y CPU (dumpsys meminfo, top, load average).
+   - Lista los paquetes instalados y agrúpalos: esenciales del sistema, extras del fabricante, apps preinstaladas y apps que yo instalé.
+
+2. Propón un plan antes de cambiar nada
+   - Por cada paquete que quieras desactivar, explica en palabras sencillas qué hace y qué podría dejar de funcionar. Pídeme confirmar cada grupo y pregúntame qué apps y funciones uso de verdad (transmitir desde el celular/AirPlay, asistente de voz, sintonizador de TV abierta, tienda del fabricante, protector de pantalla, etc.).
+   - Propón también ajustes de rendimiento: animaciones más cortas (window_animation_scale, transition_animation_scale, animator_duration_scale) y un límite menor de procesos en segundo plano (device_config activity_manager max_cached_processes).
+   - No cambies nada hasta que yo lo apruebe.
+
+3. Aplica los cambios con cuidado
+   - Usa solo comandos reversibles: "pm disable-user --user 0 <paquete>" y "settings put". Nunca desinstales paquetes del sistema, nunca borres datos de apps y nunca toques Play Store, Google Play services, la interfaz del sistema, los métodos de entrada ni los servicios de entradas/sintonizador de la TV, salvo que yo te lo pida.
+   - Antes de desactivar algo, escribe un script para revertir (revert_tv.sh) que reactive cada paquete que desactives y restaure los ajustes originales, y muéstramelo.
+   - Los cambios de paquetes se guardan en disco con retraso: espera unos 30 segundos después del último cambio antes de reiniciar.
+   - Desactiva en grupos pequeños. Después de cada grupo, reinicia y prueba conmigo: la pantalla de inicio, cada botón del control (Inicio, Atrás, Ajustes, botones de acceso directo a apps, volumen), las entradas HDMI, el sonido y mis apps de streaming.
+
+4. Cosas que suelen romperse (aprendido en una TV Hisense con Android TV)
+   - Los botones de acceso directo del control (Ajustes, Lista de apps, YouTube, Prime Video, Disney+) muchas veces los maneja el launcher original o un servicio del fabricante (en Hisense, com.vt.tv.smartsense). Prueba los botones después de desactivar paquetes del launcher o del fabricante, y reactiva lo necesario.
+   - Desactivar el launcher original (Google TV: com.google.android.apps.tv.launcherx) puede dejar como pantalla de inicio una pantalla de recuperación del asistente de configuración (com.google.android.tungsten.setupwraith). No desactives el launcher original hasta que haya otro launcher instalado y configurado como inicio.
+   - El retraso del volumen con una barra de sonido por HDMI-CEC/ARC viene de la barra, no de la TV; no intentes arreglarlo desactivando paquetes.
+
+5. Instala el launcher hack_tv
+   - Revisa https://github.com/diegopq/hack_tv/releases para ver si hay un APK. Si todavía no hay una versión publicada, detente aquí y dímelo.
+   - Si la hay, descárgala, instálala con "adb install", configúrala como app de inicio y guíame en la pantalla de la TV para dar los permisos que necesita (servicio de accesibilidad para los botones del control, acceso a notificaciones para "Reproducido recientemente", acceso a datos de uso). No escribas contraseñas ni cuentas por mí.
+   - Prueba conmigo la pantalla de inicio y los botones del control, y agrega cualquier cambio nuevo al script para revertir.
+
+Al final, dame un resumen: qué cambiaste, cuánta memoria libre hay comparado con antes y cómo deshacer todo con el script para revertir.
+```
+
+El prompt le pide al agente confirmar antes de cada cambio y que todo sea reversible. Lee cada paso que te proponga antes de aprobarlo.
+
 ## Revertir las optimizaciones de la TV
 
 Las optimizaciones desactivan algunos paquetes preinstalados (extras de Hisense, AirPlay, el protector de pantalla ambiental de Google) y aceleran las animaciones. Para deshacerlas, ejecuta esto con la depuración por red activada en la TV y `TV_IP` configurada en `.env`:
