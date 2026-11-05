@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name" translatable="false">hack_tv</string>
+
+    <!-- Top bar -->
+    <string name="search">Search</string>
+    <string name="tab_home">Home</string>
+    <string name="tab_apps">Apps</string>
+    <string name="tab_settings">Settings</string>
+
+    <!-- Recommendations banner -->
+    <string name="available_on">Available on %1$s</string>
+    <string name="watch_on">Watch on %1$s</string>
+    <string name="get_app">Get %1$s</string>
+    <string name="more_info">More info</string>
+    <string name="series">Series</string>
+    <string name="sample_credit">Sample images: TVmaze (CC BY-SA)</string>
+
+    <!-- Home rows -->
+    <string name="row_my_apps">My apps</string>
+    <string name="row_inputs">Inputs</string>
+    <string name="row_system">System</string>
+
+    <!-- Apps and Settings pages -->
+    <string name="all_apps">All apps</string>
+    <plurals name="installed_apps">
+        <item quantity="one">%d installed app</item>
+        <item quantity="other">%d installed apps</item>
+    </plurals>
+    <string name="settings_subtitle">Shortcuts to your TV settings</string>
+
+    <!-- System shortcuts -->
+    <string name="sc_settings">Settings</string>
+    <string name="sc_settings_sub">All settings</string>
+    <string name="sc_network">Network &amp; Internet</string>
+    <string name="sc_network_sub">Wi-Fi and Ethernet</string>
+    <string name="sc_picture">Picture</string>
+    <string name="sc_picture_sub">Mode and display</string>
+    <string name="sc_sound">Sound</string>
+    <string name="sc_sound_sub">Output and soundbar</string>
+    <string name="sc_remotes">Remotes &amp; accessories</string>
+    <string name="sc_remotes_sub">Bluetooth</string>
+    <string name="sc_apps">Apps</string>
+    <string name="sc_apps_sub">Manage</string>
+    <string name="sc_storage">Storage</string>
+    <string name="sc_storage_sub">Free space</string>
+    <string name="sc_language">Language</string>
+    <string name="sc_language_sub">English</string>
+    <string name="input_sub">Input</string>
+
+    <!-- Messages -->
+    <string name="coming_soon">Coming soon</string>
+    <string name="cannot_open">Couldn\'t open %1$s</string>
+</resources>

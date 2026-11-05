@@ -25,6 +25,7 @@ Empezó como una forma de acelerar y limpiar una TV Hisense con Android TV (Andr
 - [Maqueta del diseño](#maqueta-del-diseño)
   - [Idiomas](#idiomas)
   - [Parámetros de la URL](#parámetros-de-la-url)
+- [Compilar e instalar el launcher](#compilar-e-instalar-el-launcher)
 - [Configuración](#configuración)
 - [Activar la depuración por red en tu TV](#activar-la-depuración-por-red-en-tu-tv)
   - [Deja que un agente de IA te guíe](#deja-que-un-agente-de-ia-te-guíe)
@@ -39,7 +40,7 @@ Empezó como una forma de acelerar y limpiar una TV Hisense con Android TV (Andr
 |---|---|
 | Diseño de la interfaz (maqueta HTML) | ✅ Listo: [`diseno/maqueta.html`](diseno/maqueta.html) |
 | Script para revertir las optimizaciones de la TV | ✅ Listo: [`revert_tv.sh`](revert_tv.sh) |
-| App launcher para Android | 🚧 Sin empezar |
+| App launcher para Android | 🚧 v0.1 en [`launcher/`](launcher/): Inicio con el banner (datos de muestra), tus apps, entradas HDMI y accesos a ajustes, las páginas Todas las apps y Ajustes, en español e inglés |
 
 ## Funciones planeadas
 
@@ -82,6 +83,21 @@ Todos los textos de la interfaz están en el diccionario `I18N` de [`diseno/maqu
 Los parámetros de la URL definen un estado inicial, útil para demos y capturas: `?lang=es`, `?app=max`, `?focus=recent&recent=2`, `?focus=hero`, `?view=apps`, `?view=settings`, `?hint=0`, `?autoplay=0`, `?still=1` (apaga las animaciones).
 
 Las imágenes de muestra vienen de [TVmaze](https://www.tvmaze.com/) (CC BY-SA) y se cargan desde sus servidores.
+
+## Compilar e instalar el launcher
+
+La app está en [`launcher/`](launcher/): Kotlin y Compose for TV, para Android 12 (API 31) o superior. Necesitas un JDK 17 o superior (sirve el que trae Android Studio) y el SDK de Android con la plataforma 36.
+
+```bash
+cd launcher
+./gradlew assembleRelease          # genera app/build/outputs/apk/release/app-release.apk (unos 2 MB)
+adb connect <TV_IP>:5555
+adb install -r app/build/outputs/apk/release/app-release.apk
+```
+
+Ábrela desde la lista de apps de la TV (**hack_tv**). También queda registrada como app de inicio, pero en Google TV el launcher original conserva el botón Inicio hasta que se desactiva. No lo desactives todavía: en las TVs Hisense los botones de acceso directo del control dependen de él hasta que esté listo el mapeo de botones propio del launcher.
+
+Las versiones release se firman con tu clave local de depuración para poder instalarlas por adb. Configura una clave de firma real antes de publicar un APK.
 
 ## Configuración
 

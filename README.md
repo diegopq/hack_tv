@@ -25,6 +25,7 @@ It started as a way to speed up and clean up a Hisense Android TV (Android 12, M
 - [Design mockup](#design-mockup)
   - [Languages](#languages)
   - [URL parameters](#url-parameters)
+- [Build and install the launcher](#build-and-install-the-launcher)
 - [Configuration](#configuration)
 - [Enable network debugging on your TV](#enable-network-debugging-on-your-tv)
   - [Let an AI agent guide you](#let-an-ai-agent-guide-you)
@@ -39,7 +40,7 @@ It started as a way to speed up and clean up a Hisense Android TV (Android 12, M
 |---|---|
 | UI design (HTML mockup) | ✅ Done: [`diseno/maqueta.html`](diseno/maqueta.html) |
 | Revert script for the TV optimizations | ✅ Done: [`revert_tv.sh`](revert_tv.sh) |
-| Android launcher app | 🚧 Not started |
+| Android launcher app | 🚧 v0.1 in [`launcher/`](launcher/): Home with the banner (sample data), your apps, HDMI inputs and settings shortcuts, the All apps and Settings pages, English and Spanish |
 
 ## Planned features
 
@@ -82,6 +83,21 @@ All UI text lives in the `I18N` dictionary in [`diseno/maqueta.html`](diseno/maq
 URL parameters set a starting state, which is handy for demos and screenshots: `?lang=en`, `?app=max`, `?focus=recent&recent=2`, `?focus=hero`, `?view=apps`, `?view=settings`, `?hint=0`, `?autoplay=0`, `?still=1` (turns off animations).
 
 The sample artwork comes from [TVmaze](https://www.tvmaze.com/) (CC BY-SA) and loads from their servers.
+
+## Build and install the launcher
+
+The app lives in [`launcher/`](launcher/): Kotlin and Compose for TV, Android 12 (API 31) or newer. You need a JDK 17 or newer (Android Studio's bundled one works) and the Android SDK with platform 36.
+
+```bash
+cd launcher
+./gradlew assembleRelease          # builds app/build/outputs/apk/release/app-release.apk (about 2 MB)
+adb connect <TV_IP>:5555
+adb install -r app/build/outputs/apk/release/app-release.apk
+```
+
+Open it from the TV's app list (**hack_tv**). It's also registered as a home app, but on Google TV the stock launcher keeps the Home button until it's disabled. Don't disable it yet: on Hisense TVs the remote's shortcut buttons depend on it until the launcher's own button mapping is ready.
+
+Release builds are signed with your local debug key, so they install over adb. Set up a real signing key before publishing an APK.
 
 ## Configuration
 

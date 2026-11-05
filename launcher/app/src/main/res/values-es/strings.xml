@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="search">Buscar</string>
+    <string name="tab_home">Inicio</string>
+    <string name="tab_apps">Apps</string>
+    <string name="tab_settings">Ajustes</string>
+
+    <string name="available_on">Disponible en %1$s</string>
+    <string name="watch_on">Ver en %1$s</string>
+    <string name="get_app">Instalar %1$s</string>
+    <string name="more_info">Más info</string>
+    <string name="series">Serie</string>
+    <string name="sample_credit">Imágenes de muestra: TVmaze (CC BY-SA)</string>
+
+    <string name="row_my_apps">Mis apps</string>
+    <string name="row_inputs">Entradas</string>
+    <string name="row_system">Sistema</string>
+
+    <string name="all_apps">Todas las apps</string>
+    <plurals name="installed_apps">
+        <item quantity="one">%d app instalada</item>
+        <item quantity="many">%d apps instaladas</item>
+        <item quantity="other">%d apps instaladas</item>
+    </plurals>
+    <string name="settings_subtitle">Accesos directos a la configuración de la TV</string>
+
+    <string name="sc_settings">Ajustes</string>
+    <string name="sc_settings_sub">Todos los ajustes</string>
+    <string name="sc_network">Red e Internet</string>
+    <string name="sc_network_sub">Wi-Fi y Ethernet</string>
+    <string name="sc_picture">Imagen</string>
+    <string name="sc_picture_sub">Modo y pantalla</string>
+    <string name="sc_sound">Sonido</string>
+    <string name="sc_sound_sub">Salida y barra de sonido</string>
+    <string name="sc_remotes">Control y accesorios</string>
+    <string name="sc_remotes_sub">Bluetooth</string>
+    <string name="sc_apps">Apps</string>
+    <string name="sc_apps_sub">Administrar</string>
+    <string name="sc_storage">Almacenamiento</string>
+    <string name="sc_storage_sub">Espacio libre</string>
+    <string name="sc_language">Idioma</string>
+    <string name="sc_language_sub">Español</string>
+    <string name="input_sub">Entrada</string>
+
+    <string name="coming_soon">Próximamente</string>
+    <string name="cannot_open">No se pudo abrir %1$s</string>
+</resources>
