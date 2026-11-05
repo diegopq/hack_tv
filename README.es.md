@@ -26,6 +26,8 @@ Empezó como una forma de acelerar y limpiar una TV Hisense con Android TV (Andr
   - [Idiomas](#idiomas)
   - [Parámetros de la URL](#parámetros-de-la-url)
 - [Compilar e instalar el launcher](#compilar-e-instalar-el-launcher)
+  - [Botones del control](#botones-del-control)
+  - [Recomendaciones](#recomendaciones)
 - [Configuración](#configuración)
 - [Activar la depuración por red en tu TV](#activar-la-depuración-por-red-en-tu-tv)
   - [Deja que un agente de IA te guíe](#deja-que-un-agente-de-ia-te-guíe)
@@ -40,7 +42,7 @@ Empezó como una forma de acelerar y limpiar una TV Hisense con Android TV (Andr
 |---|---|
 | Diseño de la interfaz (maqueta HTML) | ✅ Listo: [`diseno/maqueta.html`](diseno/maqueta.html) |
 | Script para revertir las optimizaciones de la TV | ✅ Listo: [`revert_tv.sh`](revert_tv.sh) |
-| App launcher para Android | 🚧 v0.2 en [`launcher/`](launcher/): Inicio con el banner de recomendaciones (TMDB, o datos de muestra sin clave), tus apps, entradas HDMI y accesos a ajustes, las páginas Todas las apps y Ajustes, en español e inglés |
+| App launcher para Android | 🚧 v0.3 en [`launcher/`](launcher/): Inicio con el banner de recomendaciones (TMDB, o datos de muestra sin clave), botones de acceso directo del control, tus apps, entradas HDMI y accesos a ajustes, las páginas Todas las apps y Ajustes, en español e inglés |
 
 ## Funciones planeadas
 
@@ -95,9 +97,45 @@ adb connect <TV_IP>:5555
 adb install -r app/build/outputs/apk/release/app-release.apk
 ```
 
-Ábrela desde la lista de apps de la TV (**hack_tv**). También queda registrada como app de inicio, pero en Google TV el launcher original conserva el botón Inicio hasta que se desactiva. No lo desactives todavía: en las TVs Hisense los botones de acceso directo del control dependen de él hasta que esté listo el mapeo de botones propio del launcher.
+Ábrela desde la lista de apps de la TV (**hack_tv**). También queda registrada como app de inicio, pero en Google TV el launcher original conserva el botón Inicio hasta que se desactiva. Activa los botones del control (abajo) antes de desactivarlo, porque en las TVs Hisense algunos botones de acceso directo solo funcionan a través del launcher original.
 
-**Recomendaciones:** con `TMDB_API_KEY` en el `.env`, el banner muestra películas y series populares de los últimos tres años en las apps de streaming instaladas en la TV (Netflix, Prime Video, Disney+, HBO Max, Paramount+, ViX, Crunchyroll), en el idioma y país de la TV. Al enfocar el mosaico de una app se muestran los títulos de ese servicio. Los resultados se guardan en caché seis horas. **Más info** abre el título en la búsqueda de Google TV, que enlaza a la app que lo tiene. La clave queda dentro del APK, así que no compartas tu APK públicamente.
+### Botones del control
+
+Un servicio de accesibilidad, **Botones del control de hack_tv**, hace que los botones de acceso directo funcionen sin el launcher original. Solo reacciona a estos botones y nunca lee la pantalla:
+
+| Botón | Código | Abre |
+|---|---|---|
+| Ajustes (engrane) | 83 | La página Ajustes del launcher |
+| Lista de apps | 284 | La página Todas las apps del launcher |
+| YouTube | 190 | YouTube |
+| Prime Video | 295 | Prime Video |
+| Disney+ | 607 | Disney+ |
+| Netflix | 265 | No lo toca: lo maneja la TV |
+
+Si una app no está instalada, su botón abre su página en la Play Store. Los códigos son de un control Hisense; otros controles pueden mandar códigos distintos (están en [`RemoteKeys.kt`](launcher/app/src/main/java/io/github/diegopq/hacktv/keys/RemoteKeys.kt)).
+
+Actívalo en **Configuración → Sistema → Accesibilidad → Botones del control de hack_tv** de la TV, o por adb. Revisa primero qué servicios ya están activos para no apagarlos:
+
+```bash
+adb shell settings get secure enabled_accessibility_services
+# null o vacío: solo este servicio
+adb shell settings put secure enabled_accessibility_services io.github.diegopq.hacktv/io.github.diegopq.hacktv.keys.RemoteKeyService
+# si no, conserva el valor actual y agrega este después de dos puntos
+adb shell settings put secure enabled_accessibility_services "<valor actual>:io.github.diegopq.hacktv/io.github.diegopq.hacktv.keys.RemoteKeyService"
+adb shell settings put secure accessibility_enabled 1
+```
+
+Opcional: deja que el launcher vuelva a activar el servicio si el firmware lo apaga después de una actualización. Solo lo hace si tú lo tenías activado:
+
+```bash
+adb shell pm grant io.github.diegopq.hacktv android.permission.WRITE_SECURE_SETTINGS
+```
+
+La tarjeta **Botones del control** en la página Ajustes del launcher muestra si el servicio está activo. Las teclas enviadas con `adb shell input keyevent` no pasan por los servicios de accesibilidad, así que prueba los botones con el control real.
+
+### Recomendaciones
+
+Con `TMDB_API_KEY` en el `.env`, el banner muestra películas y series populares de los últimos tres años en las apps de streaming instaladas en la TV (Netflix, Prime Video, Disney+, HBO Max, Paramount+, ViX, Crunchyroll), en el idioma y país de la TV. Al enfocar el mosaico de una app se muestran los títulos de ese servicio. Los resultados se guardan en caché seis horas. **Más info** abre el título en la búsqueda de Google TV, que enlaza a la app que lo tiene. La clave queda dentro del APK, así que no compartas tu APK públicamente.
 
 Las versiones release se firman con tu clave local de depuración para poder instalarlas por adb. Configura una clave de firma real antes de publicar un APK.
 

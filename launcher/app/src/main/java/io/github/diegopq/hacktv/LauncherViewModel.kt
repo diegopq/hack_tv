@@ -15,6 +15,7 @@ import io.github.diegopq.hacktv.data.RecommendationSet
 import io.github.diegopq.hacktv.data.SampleContent
 import io.github.diegopq.hacktv.data.Tmdb
 import io.github.diegopq.hacktv.data.TvInputItem
+import io.github.diegopq.hacktv.keys.RemoteKeys
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -35,6 +36,10 @@ class LauncherViewModel(application: Application) : AndroidViewModel(application
     private val _recommendations = MutableStateFlow(SampleContent.set())
     val recommendations: StateFlow<RecommendationSet> = _recommendations.asStateFlow()
     private var recommendationsJob: Job? = null
+
+    /** Whether the remote-button service is on, for the card on the Settings page. */
+    private val _keyServiceOn = MutableStateFlow(false)
+    val keyServiceOn: StateFlow<Boolean> = _keyServiceOn.asStateFlow()
 
     /** Installing, updating or removing an app refreshes the tiles while Home is open. */
     private val packageReceiver = object : BroadcastReceiver() {
@@ -82,6 +87,10 @@ class LauncherViewModel(application: Application) : AndroidViewModel(application
                 ?.let { _recommendations.value = it }
             Tmdb.refresh(context, installed)?.let { _recommendations.value = it }
         }
+    }
+
+    fun refreshKeyService() {
+        _keyServiceOn.value = RemoteKeys.isEnabled(getApplication())
     }
 
     override fun onCleared() {

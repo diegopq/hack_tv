@@ -3,6 +3,7 @@ package io.github.diegopq.hacktv.ui
 import android.app.SearchManager
 import android.content.Intent
 import android.net.Uri
+import android.provider.Settings
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.gestures.BringIntoViewSpec
 import androidx.compose.foundation.gestures.LocalBringIntoViewSpec
@@ -251,7 +252,7 @@ fun HomeScreen(
 
 /** Every installed app in a grid, alphabetically. The remote's App list button opens this page. */
 @Composable
-fun AppsScreen(apps: List<LauncherApp>, onOpen: (Intent) -> Unit) {
+fun AppsScreen(apps: List<LauncherApp>, firstRequester: FocusRequester, onOpen: (Intent) -> Unit) {
     val context = LocalContext.current
     Column(Modifier.fillMaxSize().padding(top = 93.dp)) {
         PageTitle(
@@ -264,12 +265,13 @@ fun AppsScreen(apps: List<LauncherApp>, onOpen: (Intent) -> Unit) {
             horizontalArrangement = Arrangement.spacedBy(15.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            items(apps, key = { it.packageName }) { app ->
+            itemsIndexed(apps, key = { _, app -> app.packageName }) { i, app ->
                 Column {
                     AppTile(
                         app = app,
                         onClick = { onOpen(AppsRepository.launchIntent(context, app)) },
-                        modifier = Modifier.fillMaxWidth().aspectRatio(16f / 9f),
+                        modifier = Modifier.fillMaxWidth().aspectRatio(16f / 9f)
+                            .then(if (i == 0) Modifier.focusRequester(firstRequester) else Modifier),
                     )
                     Spacer(Modifier.height(7.dp))
                     Text(
@@ -288,7 +290,12 @@ fun AppsScreen(apps: List<LauncherApp>, onOpen: (Intent) -> Unit) {
 
 /** Shortcuts to the TV's own settings pages. The remote's Settings button opens this page. */
 @Composable
-fun SettingsScreen(onOpen: (Intent) -> Unit) {
+fun SettingsScreen(
+    keyServiceOn: Boolean,
+    firstRequester: FocusRequester,
+    onOpen: (Intent) -> Unit,
+    onMessage: (Int) -> Unit,
+) {
     val context = LocalContext.current
     Column(Modifier.fillMaxSize().padding(top = 93.dp)) {
         PageTitle(
@@ -301,6 +308,19 @@ fun SettingsScreen(onOpen: (Intent) -> Unit) {
             horizontalArrangement = Arrangement.spacedBy(15.dp),
             verticalArrangement = Arrangement.spacedBy(15.dp),
         ) {
+            // The remote-button service first: it's the one setting this launcher needs from the TV.
+            item(key = "keys") {
+                GlassTile(
+                    icon = R.drawable.ic_remote,
+                    title = stringResource(R.string.sc_keys),
+                    subtitle = stringResource(if (keyServiceOn) R.string.sc_keys_on else R.string.sc_keys_off),
+                    onClick = {
+                        if (keyServiceOn) onMessage(R.string.keys_already_on)
+                        else onOpen(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                    },
+                    modifier = Modifier.fillMaxWidth().height(110.dp).focusRequester(firstRequester),
+                )
+            }
             itemsIndexed(SystemShortcut.entries) { _, shortcut ->
                 GlassTile(
                     icon = shortcut.icon,

@@ -50,6 +50,13 @@
     <string name="sc_language_sub">English</string>
     <string name="input_sub">Input</string>
 
+    <!-- Remote buttons -->
+    <string name="keys_service_label">hack_tv remote buttons</string>
+    <string name="keys_service_description">Makes the remote\'s shortcut buttons work with hack_tv: Settings, app list, YouTube, Prime Video and Disney+. It only reacts to those buttons and doesn\'t read anything on screen.</string>
+    <string name="sc_keys">Remote buttons</string>
+    <string name="sc_keys_on">On</string>
+    <string name="sc_keys_off">Off · turn on in Accessibility</string>
+    <string name="keys_already_on">Remote buttons are on</string>
     <!-- Messages -->
     <string name="no_search">Search isn\'t available on this TV</string>
     <string name="coming_soon">Coming soon</string>

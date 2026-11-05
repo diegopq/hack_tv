@@ -44,27 +44,30 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 
-enum class Tab(@StringRes val label: Int) {
-    HOME(R.string.tab_home),
-    APPS(R.string.tab_apps),
-    SETTINGS(R.string.tab_settings),
+enum class Tab(@StringRes val label: Int, val key: String) {
+    HOME(R.string.tab_home, "home"),
+    APPS(R.string.tab_apps, "apps"),
+    SETTINGS(R.string.tab_settings, "settings"),
 }
 
 private val SEARCH_ACTIONS = listOf("android.search.action.GLOBAL_SEARCH", Intent.ACTION_ASSIST, Intent.ACTION_WEB_SEARCH)
 
 @Composable
-fun LauncherRoot(viewModel: LauncherViewModel, homePresses: Flow<Unit>) {
+fun LauncherRoot(viewModel: LauncherViewModel, navigation: Flow<Tab>, initialTab: Tab = Tab.HOME) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val apps by viewModel.apps.collectAsStateWithLifecycle()
     val inputs by viewModel.inputs.collectAsStateWithLifecycle()
     val recommendations by viewModel.recommendations.collectAsStateWithLifecycle()
+    val keyServiceOn by viewModel.keyServiceOn.collectAsStateWithLifecycle()
     val homeApps = remember(apps) { AppsRepository.homeOrder(apps) }
 
-    var tab by rememberSaveable { mutableStateOf(Tab.HOME) }
+    var tab by rememberSaveable { mutableStateOf(initialTab) }
     var backdropUrl by remember { mutableStateOf<String?>(null) }
     val listState = rememberLazyListState()
     val firstApp = remember { FocusRequester() }
+    val firstGridApp = remember { FocusRequester() }
+    val firstSetting = remember { FocusRequester() }
     var focusedOnce by remember { mutableStateOf(false) }
 
     fun message(@StringRes text: Int) = Toast.makeText(context, text, Toast.LENGTH_SHORT).show()
@@ -77,23 +80,36 @@ fun LauncherRoot(viewModel: LauncherViewModel, homePresses: Flow<Unit>) {
             Toast.makeText(context, context.getString(R.string.cannot_open, intent.action ?: ""), Toast.LENGTH_SHORT).show()
         }
     }
-    fun goHome() {
-        tab = Tab.HOME
+    /** Shows a page and puts focus on its first item, as the remote's Home, Apps and Settings buttons do. */
+    fun goTo(target: Tab) {
+        tab = target
         scope.launch {
-            delay(32)   // let Home compose before moving focus into it
-            listState.scrollToItem(0)
-            runCatching { firstApp.requestFocus() }
+            delay(32)   // let the page compose before moving focus into it
+            when (target) {
+                Tab.HOME -> {
+                    listState.scrollToItem(0)
+                    runCatching { firstApp.requestFocus() }
+                }
+                Tab.APPS -> runCatching { firstGridApp.requestFocus() }
+                Tab.SETTINGS -> runCatching { firstSetting.requestFocus() }
+            }
         }
     }
+    fun goHome() = goTo(Tab.HOME)
 
-    // First focus goes to the first app, as on the stock launcher.
+    // First focus goes to the first item of the opening page, as on the stock launcher.
     LaunchedEffect(homeApps.isNotEmpty()) {
         if (homeApps.isNotEmpty() && !focusedOnce) {
             delay(32)
-            focusedOnce = runCatching { firstApp.requestFocus() }.isSuccess
+            val requester = when (tab) {
+                Tab.HOME -> firstApp
+                Tab.APPS -> firstGridApp
+                Tab.SETTINGS -> firstSetting
+            }
+            focusedOnce = runCatching { requester.requestFocus() }.isSuccess
         }
     }
-    LaunchedEffect(Unit) { homePresses.collect { goHome() } }
+    LaunchedEffect(Unit) { navigation.collect { goTo(it) } }
     // A launcher never closes on Back: it goes back to the first row instead.
     BackHandler { goHome() }
 
@@ -113,8 +129,13 @@ fun LauncherRoot(viewModel: LauncherViewModel, homePresses: Flow<Unit>) {
                     onOpen = ::open,
                     onMessage = ::message,
                 )
-                Tab.APPS -> AppsScreen(apps = apps, onOpen = ::open)
-                Tab.SETTINGS -> SettingsScreen(onOpen = ::open)
+                Tab.APPS -> AppsScreen(apps = apps, firstRequester = firstGridApp, onOpen = ::open)
+                Tab.SETTINGS -> SettingsScreen(
+                    keyServiceOn = keyServiceOn,
+                    firstRequester = firstSetting,
+                    onOpen = ::open,
+                    onMessage = ::message,
+                )
             }
             TopBar(
                 tab = tab,

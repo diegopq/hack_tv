@@ -26,6 +26,8 @@ It started as a way to speed up and clean up a Hisense Android TV (Android 12, M
   - [Languages](#languages)
   - [URL parameters](#url-parameters)
 - [Build and install the launcher](#build-and-install-the-launcher)
+  - [Remote buttons](#remote-buttons)
+  - [Recommendations](#recommendations)
 - [Configuration](#configuration)
 - [Enable network debugging on your TV](#enable-network-debugging-on-your-tv)
   - [Let an AI agent guide you](#let-an-ai-agent-guide-you)
@@ -40,7 +42,7 @@ It started as a way to speed up and clean up a Hisense Android TV (Android 12, M
 |---|---|
 | UI design (HTML mockup) | ✅ Done: [`diseno/maqueta.html`](diseno/maqueta.html) |
 | Revert script for the TV optimizations | ✅ Done: [`revert_tv.sh`](revert_tv.sh) |
-| Android launcher app | 🚧 v0.2 in [`launcher/`](launcher/): Home with the recommendations banner (TMDB, or sample data without a key), your apps, HDMI inputs and settings shortcuts, the All apps and Settings pages, English and Spanish |
+| Android launcher app | 🚧 v0.3 in [`launcher/`](launcher/): Home with the recommendations banner (TMDB, or sample data without a key), remote shortcut buttons, your apps, HDMI inputs and settings shortcuts, the All apps and Settings pages, English and Spanish |
 
 ## Planned features
 
@@ -95,9 +97,45 @@ adb connect <TV_IP>:5555
 adb install -r app/build/outputs/apk/release/app-release.apk
 ```
 
-Open it from the TV's app list (**hack_tv**). It's also registered as a home app, but on Google TV the stock launcher keeps the Home button until it's disabled. Don't disable it yet: on Hisense TVs the remote's shortcut buttons depend on it until the launcher's own button mapping is ready.
+Open it from the TV's app list (**hack_tv**). It's also registered as a home app, but on Google TV the stock launcher keeps the Home button until it's disabled. Turn on the remote buttons (below) before you disable it, because on Hisense TVs some shortcut buttons only work through the stock launcher.
 
-**Recommendations:** with `TMDB_API_KEY` set in `.env`, the banner shows popular movies and series from the last three years on the streaming apps installed on the TV (Netflix, Prime Video, Disney+, HBO Max, Paramount+, ViX, Crunchyroll), in the TV's language and country. Focusing an app's tile shows that service's titles. Results are cached for six hours. **More info** opens the title in Google TV's search, which links to the app that has it. The key is built into the APK, so don't share your APK publicly.
+### Remote buttons
+
+An accessibility service, **hack_tv remote buttons**, makes the remote's shortcut buttons work without the stock launcher. It only reacts to these buttons and never reads the screen:
+
+| Button | Key code | Opens |
+|---|---|---|
+| Settings (gear) | 83 | The launcher's Settings page |
+| App list | 284 | The launcher's All apps page |
+| YouTube | 190 | YouTube |
+| Prime Video | 295 | Prime Video |
+| Disney+ | 607 | Disney+ |
+| Netflix | 265 | Not touched: the TV handles it |
+
+When an app isn't installed, its button opens its Play Store page. The codes come from a Hisense remote; other remotes may send different ones (they're in [`RemoteKeys.kt`](launcher/app/src/main/java/io/github/diegopq/hacktv/keys/RemoteKeys.kt)).
+
+Turn it on in the TV's **Settings → System → Accessibility → hack_tv remote buttons**, or over adb. Check first which services are already on, so you don't turn them off:
+
+```bash
+adb shell settings get secure enabled_accessibility_services
+# null or empty: only this service
+adb shell settings put secure enabled_accessibility_services io.github.diegopq.hacktv/io.github.diegopq.hacktv.keys.RemoteKeyService
+# otherwise, keep the current value and add this one after a colon
+adb shell settings put secure enabled_accessibility_services "<current value>:io.github.diegopq.hacktv/io.github.diegopq.hacktv.keys.RemoteKeyService"
+adb shell settings put secure accessibility_enabled 1
+```
+
+Optional: let the launcher turn the service back on if the firmware drops it after an update. It only does so if you had it on:
+
+```bash
+adb shell pm grant io.github.diegopq.hacktv android.permission.WRITE_SECURE_SETTINGS
+```
+
+The **Remote buttons** card on the launcher's Settings page shows whether the service is on. Keys sent with `adb shell input keyevent` don't go through accessibility services, so test the buttons with the real remote.
+
+### Recommendations
+
+With `TMDB_API_KEY` set in `.env`, the banner shows popular movies and series from the last three years on the streaming apps installed on the TV (Netflix, Prime Video, Disney+, HBO Max, Paramount+, ViX, Crunchyroll), in the TV's language and country. Focusing an app's tile shows that service's titles. Results are cached for six hours. **More info** opens the title in Google TV's search, which links to the app that has it. The key is built into the APK, so don't share your APK publicly.
 
 Release builds are signed with your local debug key, so they install over adb. Set up a real signing key before publishing an APK.
 

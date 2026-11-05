@@ -44,6 +44,12 @@
     <string name="sc_language_sub">Español</string>
     <string name="input_sub">Entrada</string>
 
+    <string name="keys_service_label">Botones del control de hack_tv</string>
+    <string name="keys_service_description">Hace que los botones de acceso directo del control funcionen con hack_tv: Ajustes, lista de apps, YouTube, Prime Video y Disney+. Solo reacciona a esos botones y no lee nada de la pantalla.</string>
+    <string name="sc_keys">Botones del control</string>
+    <string name="sc_keys_on">Activado</string>
+    <string name="sc_keys_off">Desactivado · actívalo en Accesibilidad</string>
+    <string name="keys_already_on">Los botones del control ya están activados</string>
     <string name="no_search">La búsqueda no está disponible en esta TV</string>
     <string name="coming_soon">Próximamente</string>
     <string name="cannot_open">No se pudo abrir %1$s</string>
