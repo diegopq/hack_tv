@@ -20,6 +20,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
+import androidx.compose.ui.input.key.type
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -60,10 +66,20 @@ fun AppMenu(
     onDismiss: () -> Unit,
 ) {
     val firstItem = remember { FocusRequester() }
+    // The menu opens while OK is still held: its release must not choose the first option.
+    // Key-ups are ignored until a key has been pressed inside the menu.
+    var armed by remember { mutableStateOf(false) }
     Dialog(onDismissRequest = onDismiss) {
         val shape = RoundedCornerShape(16.dp)
         Column(
             modifier = Modifier
+                .onPreviewKeyEvent { event ->
+                    when (event.type) {
+                        KeyEventType.KeyDown -> { armed = true; false }
+                        KeyEventType.KeyUp -> !armed
+                        else -> false
+                    }
+                }
                 .width(270.dp)
                 .background(Color(0xF2181A20), shape)
                 .border(BorderStroke(0.5.dp, HackColors.Line), shape)
