@@ -18,6 +18,21 @@ Empezó como una forma de acelerar y limpiar una TV Hisense con Android TV (Andr
 
 > Las capturas son de la maqueta HTML, todavía no de la app Android. La interfaz está disponible en español e inglés.
 
+## Contenido
+
+- [Estado](#estado)
+- [Funciones planeadas](#funciones-planeadas)
+- [Maqueta del diseño](#maqueta-del-diseño)
+  - [Idiomas](#idiomas)
+  - [Parámetros de la URL](#parámetros-de-la-url)
+- [Configuración](#configuración)
+- [Activar la depuración por red en tu TV](#activar-la-depuración-por-red-en-tu-tv)
+  - [Deja que un agente de IA te guíe](#deja-que-un-agente-de-ia-te-guíe)
+- [Optimiza tu TV con un agente de IA](#optimiza-tu-tv-con-un-agente-de-ia)
+- [Revertir las optimizaciones de la TV](#revertir-las-optimizaciones-de-la-tv)
+- [Créditos](#créditos)
+- [Licencia](#licencia)
+
 ## Estado
 
 | Parte | Estado |

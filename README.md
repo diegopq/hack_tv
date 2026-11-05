@@ -18,6 +18,21 @@ It started as a way to speed up and clean up a Hisense Android TV (Android 12, M
 
 > Screenshots come from the HTML mockup, not the Android app yet. The UI is available in English and Spanish.
 
+## Contents
+
+- [Status](#status)
+- [Planned features](#planned-features)
+- [Design mockup](#design-mockup)
+  - [Languages](#languages)
+  - [URL parameters](#url-parameters)
+- [Configuration](#configuration)
+- [Enable network debugging on your TV](#enable-network-debugging-on-your-tv)
+  - [Let an AI agent guide you](#let-an-ai-agent-guide-you)
+- [Optimize your TV with an AI agent](#optimize-your-tv-with-an-ai-agent)
+- [Revert the TV optimizations](#revert-the-tv-optimizations)
+- [Credits](#credits)
+- [License](#license)
+
 ## Status
 
 | Part | Status |
