@@ -1,5 +1,7 @@
 # hack_tv
 
+**English** · [Español](README.es.md)
+
 Custom Android TV launcher: ad-free home screen, remote button remapping, and streaming recommendations. Built with Kotlin and Compose for TV.
 
 It started as a way to speed up and clean up a Hisense Android TV (Android 12, MediaTek MT9689, 2.4 GB RAM) without buying third-party apps.
