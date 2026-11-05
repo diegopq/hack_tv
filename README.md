@@ -159,7 +159,7 @@ Apps installed later go at the end of the row.
 
 ### Recommendations
 
-With `TMDB_API_KEY` set in `.env`, the banner shows popular movies and series from the last three years on the streaming apps installed on the TV (Netflix, Prime Video, Disney+, HBO Max, Paramount+, ViX, Crunchyroll), in the TV's language and country. Only services whose app is installed are used, and the banner shows a random mix of up to ten titles that takes turns between them, new each time you open Home. Results are cached for six hours. If your TV's language is set to another country's variant (for example `es-US` on a TV in Mexico), set `TMDB_REGION` so the titles match what's available where you live. **More info** opens the title in Google TV's search, which links to the app that has it. The key is built into the APK, so don't share your APK publicly.
+With `TMDB_API_KEY` set in `.env`, the banner shows popular movies and series from the last three years on the streaming apps installed on the TV (Netflix, Prime Video, Disney+, HBO Max, Apple TV, Paramount+, ViX, Crunchyroll), in the TV's language. Only services whose app is installed are used, and the banner shows a random mix of up to ten titles that takes turns between them, new each time you open Home. Results are cached for six hours. The country comes from the TV's time zone (America/Mexico_City means Mexico), because the language setting often names another country (`es-US` on a TV in Mexico). Set `TMDB_REGION` only to force a different country. **More info** opens the title in Google TV's search, which links to the app that has it. The key is built into the APK, so don't share your APK publicly.
 
 Release builds are signed with your local debug key, so they install over adb. Set up a real signing key before publishing an APK.
 
@@ -176,7 +176,7 @@ cp .env.example .env
 | `TV_IP` | Your TV's IP address on the local network |
 | `TV_PORT` | adb port (default `5555`) |
 | `TMDB_API_KEY` | Free TMDB API key for recommendations ([get one here](https://www.themoviedb.org/settings/api)). Read when the launcher is built; without it the banner shows sample data |
-| `TMDB_REGION` | Optional two-letter country for streaming availability (`MX`, `US`…). Empty uses the TV's country |
+| `TMDB_REGION` | Optional two-letter country for streaming availability (`MX`, `US`…). Empty detects it from the TV's time zone |
 
 Never commit `.env`. Only `.env.example` belongs in the repository.
 

@@ -181,12 +181,21 @@ object Tmdb {
         return if (locale.country.isNotBlank()) "${locale.language}-${locale.country}" else locale.language
     }
 
-    private fun region(): String =
-        BuildConfig.TMDB_REGION.ifBlank { Locale.getDefault().country }.ifBlank { "MX" }.uppercase()
+    /**
+     * The country whose streaming catalogs to use. The TV's language often names another country
+     * (a TV in Mexico set to es-US), so the time zone decides: America/Mexico_City is MX. TMDB_REGION
+     * in .env still overrides it for builds that need a fixed country.
+     */
+    internal fun region(): String {
+        BuildConfig.TMDB_REGION.takeIf { it.isNotBlank() }?.let { return it.uppercase() }
+        val fromTimeZone = runCatching { android.icu.util.TimeZone.getRegion(java.util.TimeZone.getDefault().id) }
+            .getOrNull()?.takeIf { it.length == 2 }   // "001" means no country (UTC, Etc/...)
+        return (fromTimeZone ?: Locale.getDefault().country.ifBlank { "MX" }).uppercase()
+    }
 
     /** The cache is only valid for the same language, country and installed services. */
     private fun queryKey(installedPackages: Set<String>): String =
-        "v3|${languageTag()}|${region()}|" + servicesFor(installedPackages).joinToString(",") { it.key }
+        "v4|${languageTag()}|${region()}|" + servicesFor(installedPackages).joinToString(",") { it.key }
 
     private fun cacheFile(context: Context) = File(context.cacheDir, "tmdb-recommendations.json")
 

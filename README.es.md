@@ -159,7 +159,7 @@ Las apps que instales después se agregan al final de la fila.
 
 ### Recomendaciones
 
-Con `TMDB_API_KEY` en el `.env`, el banner muestra películas y series populares de los últimos tres años en las apps de streaming instaladas en la TV (Netflix, Prime Video, Disney+, HBO Max, Paramount+, ViX, Crunchyroll), en el idioma y país de la TV. Solo se usan los servicios cuya app está instalada, y el banner muestra una mezcla aleatoria de hasta diez títulos que se turna entre ellos, distinta cada vez que abres Inicio. Los resultados se guardan en caché seis horas. Si el idioma de tu TV es la variante de otro país (por ejemplo `es-US` en una TV en México), configura `TMDB_REGION` para que los títulos coincidan con lo disponible donde vives. **Más info** abre el título en la búsqueda de Google TV, que enlaza a la app que lo tiene. La clave queda dentro del APK, así que no compartas tu APK públicamente.
+Con `TMDB_API_KEY` en el `.env`, el banner muestra películas y series populares de los últimos tres años en las apps de streaming instaladas en la TV (Netflix, Prime Video, Disney+, HBO Max, Apple TV, Paramount+, ViX, Crunchyroll), en el idioma de la TV. Solo se usan los servicios cuya app está instalada, y el banner muestra una mezcla aleatoria de hasta diez títulos que se turna entre ellos, distinta cada vez que abres Inicio. Los resultados se guardan en caché seis horas. El país se toma de la zona horaria de la TV (America/Mexico_City es México), porque el idioma a veces indica otro país (`es-US` en una TV en México). Configura `TMDB_REGION` solo para forzar otro país. **Más info** abre el título en la búsqueda de Google TV, que enlaza a la app que lo tiene. La clave queda dentro del APK, así que no compartas tu APK públicamente.
 
 Las versiones release se firman con tu clave local de depuración para poder instalarlas por adb. Configura una clave de firma real antes de publicar un APK.
 
@@ -176,7 +176,7 @@ cp .env.example .env
 | `TV_IP` | Dirección IP de tu TV en la red local |
 | `TV_PORT` | Puerto de adb (por defecto `5555`) |
 | `TMDB_API_KEY` | Clave de API gratuita de TMDB para las recomendaciones ([consíguela aquí](https://www.themoviedb.org/settings/api)). Se lee al compilar el launcher; sin ella el banner muestra datos de muestra |
-| `TMDB_REGION` | Opcional: país de dos letras para la disponibilidad en streaming (`MX`, `US`…). Vacío usa el país de la TV |
+| `TMDB_REGION` | Opcional: país de dos letras para la disponibilidad en streaming (`MX`, `US`…). Vacío lo detecta por la zona horaria de la TV |
 
 Nunca subas `.env` al repositorio. Solo `.env.example` va en el repositorio.
 

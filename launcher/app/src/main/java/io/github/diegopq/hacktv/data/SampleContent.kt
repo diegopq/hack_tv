@@ -23,6 +23,7 @@ val PROVIDERS = listOf(
     Provider("paramount", "Paramount+", "com.cbs.ott", 0xFF0064FF, listOf(531, 2303, 2616)),
     Provider("vix", "ViX", "com.univision.prendetv", 0xFFFF5A00, listOf(457)),
     Provider("crunchyroll", "Crunchyroll", "com.crunchyroll.crunchyroid", 0xFFF47521, listOf(283)),
+    Provider("appletv", "Apple TV", "com.apple.atve.androidtv.appletv", 0xFF2C2C2E, listOf(350)),
 ).associateBy { it.key }
 
 /** The four services the banner falls back to when none of the known apps is installed. */
