@@ -76,7 +76,9 @@ header{position:absolute;z-index:10;top:0;left:0;right:0;height:150px;padding:0 
   background:var(--glass);border:1px solid var(--line);opacity:0;transition:opacity .25s}
 .chev svg{width:30px;height:30px}
 .chev.l{left:36px}.chev.r{right:36px}
-.hero:has(.btn.focus) .chev{opacity:1}
+.hero:has(.btn.focus) .chev,.hero:hover .chev{opacity:1}
+.chev{cursor:pointer}
+[data-f]{cursor:pointer}
 
 .row{padding:0 var(--pad);margin-bottom:58px;transition:opacity .35s ease}
 .row h2{font-size:28px;font-weight:700;margin-bottom:24px;display:flex;align-items:baseline;gap:16px}
@@ -151,7 +153,7 @@ header{position:absolute;z-index:10;top:0;left:0;right:0;height:150px;padding:0 
   background:rgba(0,0,0,.6);font-size:16px;color:var(--faint);transition:opacity .3s}
 .hint.off{opacity:0}
 .hint kbd{font-family:inherit;font-weight:700;color:var(--muted);padding:2px 8px;border-radius:6px;border:1px solid var(--line);margin-right:7px}
-.credit{position:absolute;z-index:20;left:28px;bottom:22px;font-size:14px;color:rgba(255,255,255,.3)}
+.credit{position:absolute;z-index:20;left:132px;top:122px;font-size:14px;color:rgba(255,255,255,.3)}
 </style>
 </head>
 <body>
@@ -211,7 +213,7 @@ header{position:absolute;z-index:10;top:0;left:0;right:0;height:150px;padding:0 
   <div class="toast" id="toast"></div>
   <div class="credit">Imágenes de muestra: TVmaze (CC BY-SA)</div>
   <div class="hint" id="hint">
-    <span><kbd>← ↑ ↓ →</kbd>Navegar</span><span><kbd>← →</kbd>en los botones: otra recomendación</span><span><kbd>Enter</kbd>Abrir</span><span><kbd>Esc</kbd>Atrás</span>
+    <span><kbd>← ↑ ↓ →</kbd>Navegar</span><span><kbd>← →</kbd>en los botones: otra recomendación</span><span><kbd>Enter</kbd>Abrir</span><span><kbd>Esc</kbd>Atrás</span><span><kbd>Clic</kbd>Enfocar, otro clic abre</span>
     <span><kbd>A</kbd>Botón apps</span><span><kbd>S</kbd>Botón ajustes</span><span><kbd>H</kbd>Ayuda</span>
   </div>
 </div>
@@ -260,23 +262,23 @@ const IMG = id => `https://static.tvmaze.com/uploads/images/original_untouched/$
 const SHOWS = {
   stranger:{title:'Stranger Things', app:'netflix', year:2016, genres:'Drama, Terror, Ciencia ficción', img:IMG('410/1025588'),
     desc:'En Hawkins, un grupo de amigos enfrenta fuerzas sobrenaturales y experimentos secretos tras la desaparición de un niño.'},
-  wednesday:{title:'Merlina', app:'netflix', year:2022, genres:'Comedia, Misterio', img:IMG('486/1215632'),
+  wednesday:{title:'Merlina', app:'netflix', year:2022, genres:'Comedia, Misterio', img:IMG('423/1059627'),
     desc:'Merlina Addams llega a la Academia Nevermore y queda envuelta en una serie de asesinatos que sacude al pueblo.'},
-  squid:{title:'El juego del calamar', app:'netflix', year:2021, genres:'Drama, Suspenso', img:IMG('355/889191'),
+  squid:{title:'El juego del calamar', app:'netflix', year:2021, genres:'Drama, Suspenso', img:IMG('551/1377828'),
     desc:'Cientos de personas endeudadas aceptan competir en juegos infantiles por un premio millonario, con consecuencias mortales.'},
   boys:{title:'The Boys', app:'prime', year:2019, genres:'Acción, Fantasía', img:IMG('265/664986'),
     desc:'Un grupo de vigilantes se propone exponer a los superhéroes corruptos que abusan de sus poderes.'},
-  reacher:{title:'Reacher', app:'prime', year:2022, genres:'Acción, Suspenso', img:IMG('557/1392930'),
+  reacher:{title:'Reacher', app:'prime', year:2022, genres:'Acción, Suspenso', img:IMG('631/1577970'),
     desc:'Jack Reacher, exinvestigador de la policía militar, llega a un pueblo y queda atrapado en una conspiración.'},
-  mando:{title:'The Mandalorian', app:'disney', year:2019, genres:'Acción, Aventura', img:IMG('280/701367'),
+  mando:{title:'The Mandalorian', app:'disney', year:2019, genres:'Acción, Aventura', img:IMG('245/612595'),
     desc:'Un cazarrecompensas solitario recorre los confines de la galaxia, lejos de la autoridad de la Nueva República.'},
-  andor:{title:'Andor', app:'disney', year:2022, genres:'Ciencia ficción, Espionaje', img:IMG('442/1107093'),
+  andor:{title:'Andor', app:'disney', year:2022, genres:'Ciencia ficción, Espionaje', img:IMG('412/1030745'),
     desc:'La historia de Cassian Andor y de los años que encendieron la chispa de la Rebelión.'},
-  bear:{title:'The Bear', app:'disney', year:2022, genres:'Drama, Comedia', img:IMG('413/1034786'),
+  bear:{title:'The Bear', app:'disney', year:2022, genres:'Drama, Comedia', img:IMG('500/1251717'),
     desc:'Un chef de alta cocina regresa a Chicago para hacerse cargo del pequeño restaurante de su familia.'},
   shogun:{title:'Shōgun', app:'disney', year:2024, genres:'Drama, Historia', img:IMG('506/1265761'),
     desc:'Japón, año 1600: un navegante inglés naufraga y queda en medio de una lucha por el poder entre señores feudales.'},
-  lastofus:{title:'The Last of Us', app:'max', year:2023, genres:'Drama, Acción', img:IMG('441/1103208'),
+  lastofus:{title:'The Last of Us', app:'max', year:2023, genres:'Drama, Acción', img:IMG('442/1106984'),
     desc:'Veinte años después de una pandemia, Joel debe sacar a Ellie de una zona de cuarentena y cruzar un país devastado.'},
   hotd:{title:'La casa del dragón', app:'max', year:2022, genres:'Drama, Fantasía', img:IMG('488/1221139'),
     desc:'La casa Targaryen se divide en una guerra por el Trono de Hierro, 200 años antes de Game of Thrones.'},
@@ -287,7 +289,7 @@ const RECS = {
   mix:['stranger','lastofus','boys','mando','wednesday','hotd'],
   netflix:['stranger','wednesday','squid'],
   prime:['boys','reacher'],
-  disney:['mando','andor','bear','shogun'],
+  disney:['mando','andor','bear'],
   max:['lastofus','hotd','lotus'],
 };
 const RECENT = [
@@ -366,7 +368,7 @@ function renderHero(now) {
   clearTimeout(heroT);
   const apply = () => {
     const id = curShow(), s = SHOWS[id], app = byId[s.app];
-    setBackdrop('show:' + id, showBg(s));
+    if (view === 'home') setBackdrop('show:' + id, showBg(s));
     $('#dots').innerHTML = RECS[recKey].map((_, i) => `<i class="dot ${i === slide ? 'on' : ''}"></i>`).join('');
     if (heroShow === id) return; heroShow = id;
     const copy = $('#hcopy'); copy.classList.add('out');
@@ -390,8 +392,9 @@ function step(d) {
   const n = RECS[recKey].length; slide = (slide + d + n) % n; renderHero(true); lastStep = Date.now();
 }
 let lastStep = Date.now();
+const NOAUTO = new URLSearchParams(location.search).get('autoplay') === '0';
 setInterval(() => {   // avance automático mientras estás en el banner o en Mis apps
-  if (view !== 'home' || !cur || Date.now() - lastStep < 9000) return;
+  if (NOAUTO || view !== 'home' || !cur || Date.now() - lastStep < 9000) return;
   if (cur.closest('#hero') || cur.dataset.row === 'apps' || cur.closest('header')) step(1);
 }, 1000);
 
@@ -508,9 +511,26 @@ addEventListener('keydown', e => {
   if (lk === 'h') $('#hint').classList.toggle('off');
 });
 
-/* ---------- Inicio ---------- */
+/* ---------- Mouse y pantalla táctil: un clic enfoca, otro clic abre ---------- */
+stage.addEventListener('click', e => {
+  if (e.target.closest('#chev-l')) return step(-1);
+  if (e.target.closest('#chev-r')) return step(1);
+  const el = e.target.closest('[data-f]');
+  if (!el) return;
+  if (el === cur) activate(); else setFocus(el);
+});
+
+/* ---------- Inicio ----------
+   Estado inicial opcional por URL (para capturas y demos):
+   ?app=max · ?focus=recent&recent=2 · ?focus=hero · ?view=apps|settings · ?hint=0 · ?autoplay=0 */
+const q = new URLSearchParams(location.search);
 renderHero(true);
-setFocus(document.querySelector('#t-apps .tile'));
+setFocus(document.querySelector(`#t-apps [data-id="${q.get('app')}"]`) || document.querySelector('#t-apps .tile'));
+if (q.get('focus') === 'hero') setFocus($('#b-watch'));
+if (q.get('focus') === 'recent') setFocus(document.querySelectorAll('#t-recent .tile')[+q.get('recent') || 0]);
+if (q.get('view') === 'apps') { setFocus(document.querySelector('[data-tab="apps"]')); setFocus(document.querySelector('#grid .tile')); }
+if (q.get('view') === 'settings') { setFocus(document.querySelector('[data-tab="settings"]')); setFocus(document.querySelector('#cards .tile')); }
+if (q.get('hint') === '0') $('#hint').classList.add('off');
 setTimeout(() => $('#hint').classList.add('off'), 8000);
 </script>
 </body>

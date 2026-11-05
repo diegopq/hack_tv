@@ -4,6 +4,18 @@ Custom Android TV launcher: ad-free home screen, remote button remapping, and st
 
 It started as a way to speed up and clean up a Hisense Android TV (Android 12, MediaTek MT9689, 2.4 GB RAM) without buying third-party apps.
 
+**[▶ Try the interactive mockup](https://diegopq.github.io/hack_tv/)**: use your keyboard as the remote, or click and tap.
+
+![Home screen with the recommendations banner](docs/screenshots/home.jpg)
+
+| Recently played | All apps |
+|---|---|
+| ![Recently played row](docs/screenshots/recently-played.jpg) | ![All apps grid](docs/screenshots/all-apps.jpg) |
+| **Recommendations follow the focused app** | **Settings shortcuts** |
+| ![Banner showing Disney+ recommendations](docs/screenshots/home-disney.jpg) | ![Settings shortcuts](docs/screenshots/settings.jpg) |
+
+> The UI is in Spanish. Screenshots come from the HTML mockup, not the Android app yet.
+
 ## Status
 
 | Part | Status |
@@ -22,7 +34,9 @@ It started as a way to speed up and clean up a Hisense Android TV (Android 12, M
 
 ## Design mockup
 
-Open [`diseno/maqueta.html`](diseno/maqueta.html) in a browser. It renders at 1920×1080 and scales to fit the window. Use the keyboard as the remote:
+Try it online at **[diegopq.github.io/hack_tv](https://diegopq.github.io/hack_tv/)**, or open [`diseno/maqueta.html`](diseno/maqueta.html) locally in a browser. It renders at 1920×1080 and scales to fit the window. Every push to `diseno/` redeploys it through [GitHub Pages](.github/workflows/pages.yml).
+
+Use the keyboard as the remote:
 
 | Key | Action |
 |---|---|
@@ -33,6 +47,9 @@ Open [`diseno/maqueta.html`](diseno/maqueta.html) in a browser. It renders at 19
 | A / S | Simulates the remote's App list and Settings buttons |
 | N / Y / P / D | Simulates the Netflix, YouTube, Prime Video, and Disney+ buttons |
 | H | Show or hide the help bar |
+| Click or tap | Focus an item; click again to open it |
+
+URL parameters set a starting state, which is handy for demos and screenshots: `?app=max`, `?focus=recent&recent=2`, `?focus=hero`, `?view=apps`, `?view=settings`, `?hint=0`, `?autoplay=0`.
 
 The sample artwork comes from [TVmaze](https://www.tvmaze.com/) (CC BY-SA) and loads from their servers.
 
