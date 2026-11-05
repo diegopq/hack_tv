@@ -40,7 +40,7 @@ Empezó como una forma de acelerar y limpiar una TV Hisense con Android TV (Andr
 |---|---|
 | Diseño de la interfaz (maqueta HTML) | ✅ Listo: [`diseno/maqueta.html`](diseno/maqueta.html) |
 | Script para revertir las optimizaciones de la TV | ✅ Listo: [`revert_tv.sh`](revert_tv.sh) |
-| App launcher para Android | 🚧 v0.1 en [`launcher/`](launcher/): Inicio con el banner (datos de muestra), tus apps, entradas HDMI y accesos a ajustes, las páginas Todas las apps y Ajustes, en español e inglés |
+| App launcher para Android | 🚧 v0.2 en [`launcher/`](launcher/): Inicio con el banner de recomendaciones (TMDB, o datos de muestra sin clave), tus apps, entradas HDMI y accesos a ajustes, las páginas Todas las apps y Ajustes, en español e inglés |
 
 ## Funciones planeadas
 
@@ -97,6 +97,8 @@ adb install -r app/build/outputs/apk/release/app-release.apk
 
 Ábrela desde la lista de apps de la TV (**hack_tv**). También queda registrada como app de inicio, pero en Google TV el launcher original conserva el botón Inicio hasta que se desactiva. No lo desactives todavía: en las TVs Hisense los botones de acceso directo del control dependen de él hasta que esté listo el mapeo de botones propio del launcher.
 
+**Recomendaciones:** con `TMDB_API_KEY` en el `.env`, el banner muestra películas y series populares de los últimos tres años en las apps de streaming instaladas en la TV (Netflix, Prime Video, Disney+, HBO Max, Paramount+, ViX, Crunchyroll), en el idioma y país de la TV. Al enfocar el mosaico de una app se muestran los títulos de ese servicio. Los resultados se guardan en caché seis horas. **Más info** abre el título en la búsqueda de Google TV, que enlaza a la app que lo tiene. La clave queda dentro del APK, así que no compartas tu APK públicamente.
+
 Las versiones release se firman con tu clave local de depuración para poder instalarlas por adb. Configura una clave de firma real antes de publicar un APK.
 
 ## Configuración
@@ -111,7 +113,8 @@ cp .env.example .env
 |---|---|
 | `TV_IP` | Dirección IP de tu TV en la red local |
 | `TV_PORT` | Puerto de adb (por defecto `5555`) |
-| `TMDB_API_KEY` | Clave de API gratuita de TMDB para las recomendaciones ([consíguela aquí](https://www.themoviedb.org/settings/api)) |
+| `TMDB_API_KEY` | Clave de API gratuita de TMDB para las recomendaciones ([consíguela aquí](https://www.themoviedb.org/settings/api)). Se lee al compilar el launcher; sin ella el banner muestra datos de muestra |
+| `TMDB_REGION` | Opcional: país de dos letras para la disponibilidad en streaming (`MX`, `US`…). Vacío usa el país de la TV |
 
 Nunca subas `.env` al repositorio. Solo `.env.example` va en el repositorio.
 

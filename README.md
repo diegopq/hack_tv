@@ -40,7 +40,7 @@ It started as a way to speed up and clean up a Hisense Android TV (Android 12, M
 |---|---|
 | UI design (HTML mockup) | ✅ Done: [`diseno/maqueta.html`](diseno/maqueta.html) |
 | Revert script for the TV optimizations | ✅ Done: [`revert_tv.sh`](revert_tv.sh) |
-| Android launcher app | 🚧 v0.1 in [`launcher/`](launcher/): Home with the banner (sample data), your apps, HDMI inputs and settings shortcuts, the All apps and Settings pages, English and Spanish |
+| Android launcher app | 🚧 v0.2 in [`launcher/`](launcher/): Home with the recommendations banner (TMDB, or sample data without a key), your apps, HDMI inputs and settings shortcuts, the All apps and Settings pages, English and Spanish |
 
 ## Planned features
 
@@ -97,6 +97,8 @@ adb install -r app/build/outputs/apk/release/app-release.apk
 
 Open it from the TV's app list (**hack_tv**). It's also registered as a home app, but on Google TV the stock launcher keeps the Home button until it's disabled. Don't disable it yet: on Hisense TVs the remote's shortcut buttons depend on it until the launcher's own button mapping is ready.
 
+**Recommendations:** with `TMDB_API_KEY` set in `.env`, the banner shows popular movies and series from the last three years on the streaming apps installed on the TV (Netflix, Prime Video, Disney+, HBO Max, Paramount+, ViX, Crunchyroll), in the TV's language and country. Focusing an app's tile shows that service's titles. Results are cached for six hours. **More info** opens the title in Google TV's search, which links to the app that has it. The key is built into the APK, so don't share your APK publicly.
+
 Release builds are signed with your local debug key, so they install over adb. Set up a real signing key before publishing an APK.
 
 ## Configuration
@@ -111,7 +113,8 @@ cp .env.example .env
 |---|---|
 | `TV_IP` | Your TV's IP address on the local network |
 | `TV_PORT` | adb port (default `5555`) |
-| `TMDB_API_KEY` | Free TMDB API key for recommendations ([get one here](https://www.themoviedb.org/settings/api)) |
+| `TMDB_API_KEY` | Free TMDB API key for recommendations ([get one here](https://www.themoviedb.org/settings/api)). Read when the launcher is built; without it the banner shows sample data |
+| `TMDB_REGION` | Optional two-letter country for streaming availability (`MX`, `US`…). Empty uses the TV's country |
 
 Never commit `.env`. Only `.env.example` belongs in the repository.
 

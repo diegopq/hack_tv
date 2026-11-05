@@ -34,5 +34,7 @@ class MainActivity : ComponentActivity() {
         super.onResume()
         // An input may have been renamed, or a device plugged into an HDMI port, while another app was open.
         viewModel.refreshInputs()
+        // New recommendations every few hours; the cache makes this free the rest of the time.
+        viewModel.refreshRecommendations()
     }
 }

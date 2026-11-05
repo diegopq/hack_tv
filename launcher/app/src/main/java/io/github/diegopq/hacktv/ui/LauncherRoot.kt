@@ -58,6 +58,7 @@ fun LauncherRoot(viewModel: LauncherViewModel, homePresses: Flow<Unit>) {
     val scope = rememberCoroutineScope()
     val apps by viewModel.apps.collectAsStateWithLifecycle()
     val inputs by viewModel.inputs.collectAsStateWithLifecycle()
+    val recommendations by viewModel.recommendations.collectAsStateWithLifecycle()
     val homeApps = remember(apps) { AppsRepository.homeOrder(apps) }
 
     var tab by rememberSaveable { mutableStateOf(Tab.HOME) }
@@ -105,6 +106,7 @@ fun LauncherRoot(viewModel: LauncherViewModel, homePresses: Flow<Unit>) {
                     homeApps = homeApps,
                     allApps = apps,
                     inputs = inputs,
+                    recommendations = recommendations,
                     listState = listState,
                     firstAppRequester = firstApp,
                     onBackdrop = { backdropUrl = it },
@@ -120,13 +122,13 @@ fun LauncherRoot(viewModel: LauncherViewModel, homePresses: Flow<Unit>) {
                 onSearch = {
                     val pm = context.packageManager
                     val action = SEARCH_ACTIONS.firstOrNull { Intent(it).resolveActivity(pm) != null }
-                    if (action != null) open(Intent(action).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) else message(R.string.coming_soon)
+                    if (action != null) open(Intent(action).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) else message(R.string.no_search)
                 },
                 modifier = Modifier.align(Alignment.TopCenter),
             )
             if (tab == Tab.HOME) {
                 Text(
-                    stringResource(R.string.sample_credit),
+                    stringResource(if (recommendations.fromTmdb) R.string.tmdb_credit else R.string.sample_credit),
                     fontSize = 7.sp,
                     color = Color(0x4DFFFFFF),
                     modifier = Modifier.align(Alignment.TopStart).padding(start = 66.dp, top = 61.dp),

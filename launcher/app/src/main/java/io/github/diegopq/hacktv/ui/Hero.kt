@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -72,7 +73,8 @@ fun Hero(
     watchRequester: FocusRequester = FocusRequester(),
 ) {
     val provider = PROVIDERS.getValue(recommendation.provider)
-    Column(modifier.fillMaxWidth().height(345.dp).padding(start = 60.dp, top = 98.dp, end = 60.dp)) {
+    val kind = stringResource(if (recommendation.isMovie) R.string.movie else R.string.series)
+    Column(modifier.fillMaxWidth().heightIn(min = 345.dp).padding(start = 60.dp, top = 98.dp, end = 60.dp)) {
         AnimatedContent(
             targetState = recommendation,
             transitionSpec = { fadeIn(tween(260)) togetherWith fadeOut(tween(160)) },
@@ -90,25 +92,31 @@ fun Hero(
                     )
                 }
                 Spacer(Modifier.height(9.dp))
+                // Long TMDB titles get a smaller size and a second line instead of being cut off.
+                val titleSize = when {
+                    rec.title.length <= 20 -> 46.sp
+                    rec.title.length <= 32 -> 38.sp
+                    else -> 32.sp
+                }
                 Text(
-                    rec.localTitle,
-                    fontSize = 46.sp,
-                    lineHeight = 48.sp,
+                    rec.title,
+                    fontSize = titleSize,
+                    lineHeight = titleSize * 1.06f,
                     fontWeight = FontWeight.ExtraBold,
                     letterSpacing = (-1.2).sp,
-                    maxLines = 1,
+                    maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                 )
                 Spacer(Modifier.height(7.dp))
                 Text(
-                    "${rec.year} · ${rec.localGenres} · ${stringResource(R.string.series)}",
+                    listOfNotNull(rec.year?.toString(), rec.genres.takeIf { it.isNotBlank() }, kind).joinToString(" · "),
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Medium,
                     color = HackColors.Muted,
                 )
                 Spacer(Modifier.height(7.dp))
                 Text(
-                    rec.localDescription,
+                    rec.description,
                     fontSize = 13.sp,
                     lineHeight = 18.sp,
                     color = HackColors.Muted,

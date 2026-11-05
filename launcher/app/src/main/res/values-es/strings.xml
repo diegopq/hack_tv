@@ -8,6 +8,8 @@
     <string name="available_on">Disponible en %1$s</string>
     <string name="watch_on">Ver en %1$s</string>
     <string name="get_app">Instalar %1$s</string>
+    <string name="movie">Película</string>
+    <string name="tmdb_credit">Datos e imágenes: TMDB</string>
     <string name="more_info">Más info</string>
     <string name="series">Serie</string>
     <string name="sample_credit">Imágenes de muestra: TVmaze (CC BY-SA)</string>
@@ -42,6 +44,7 @@
     <string name="sc_language_sub">Español</string>
     <string name="input_sub">Entrada</string>
 
+    <string name="no_search">La búsqueda no está disponible en esta TV</string>
     <string name="coming_soon">Próximamente</string>
     <string name="cannot_open">No se pudo abrir %1$s</string>
 </resources>

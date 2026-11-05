@@ -1,5 +1,6 @@
 package io.github.diegopq.hacktv.ui
 
+import android.app.SearchManager
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -55,12 +56,15 @@ import io.github.diegopq.hacktv.data.AppsRepository
 import io.github.diegopq.hacktv.data.Inputs
 import io.github.diegopq.hacktv.data.LauncherApp
 import io.github.diegopq.hacktv.data.PROVIDERS
+import io.github.diegopq.hacktv.data.RecommendationSet
 import io.github.diegopq.hacktv.data.SampleContent
 import io.github.diegopq.hacktv.data.SystemShortcut
 import io.github.diegopq.hacktv.data.TvInputItem
 import io.github.diegopq.hacktv.ui.theme.HackColors
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+
+private const val GLOBAL_SEARCH = "android.search.action.GLOBAL_SEARCH"
 
 private val RowPadding = PaddingValues(horizontal = 60.dp, vertical = 6.dp)
 private val TileSize = Modifier.size(156.dp, 88.dp)
@@ -97,6 +101,7 @@ fun HomeScreen(
     homeApps: List<LauncherApp>,
     allApps: List<LauncherApp>,
     inputs: List<TvInputItem>,
+    recommendations: RecommendationSet,
     listState: LazyListState,
     firstAppRequester: FocusRequester,
     onBackdrop: (String) -> Unit,
@@ -106,11 +111,11 @@ fun HomeScreen(
     val context = LocalContext.current
     // The banner follows the focused app's service; apps without a catalog keep the current list.
     var recKey by rememberSaveable { mutableStateOf(SampleContent.MIX) }
-    val recs = remember(recKey) { SampleContent.forKey(recKey) }
-    var slide by remember(recKey) { mutableIntStateOf(0) }
-    val rec = recs[slide.mod(recs.size)]
+    val recs = remember(recKey, recommendations) { recommendations.forKey(recKey) }
+    var slide by remember(recKey, recommendations) { mutableIntStateOf(0) }
+    val rec = recs.getOrNull(slide.mod(recs.size.coerceAtLeast(1)))
     val providerApp = remember(rec, allApps) {
-        val pkg = PROVIDERS.getValue(rec.provider).packageName
+        val pkg = rec?.let { PROVIDERS[it.provider]?.packageName }
         allApps.firstOrNull { it.packageName == pkg }
     }
 
@@ -127,29 +132,35 @@ fun HomeScreen(
     }
     val fadeDistance = with(density) { 120.dp.toPx() }
 
-    LaunchedEffect(rec.imageUrl) { onBackdrop(rec.imageUrl) }
-    LaunchedEffect(recKey, slide) {
+    LaunchedEffect(rec?.imageUrl) { rec?.let { onBackdrop(it.imageUrl) } }
+    LaunchedEffect(recKey, slide, recs) {
         delay(9_000)
-        slide = (slide + 1).mod(recs.size)
+        if (recs.isNotEmpty()) slide = (slide + 1).mod(recs.size)
     }
 
     WithScrollSpec(columnSpec) {
     LazyColumn(state = listState, contentPadding = PaddingValues(bottom = 48.dp)) {
-        item(key = "hero") {
+        if (rec != null) item(key = "hero") {
             Hero(
                 recommendation = rec,
                 index = slide.mod(recs.size),
                 count = recs.size,
                 providerApp = providerApp,
                 onWatch = {
-                    val pkg = PROVIDERS.getValue(rec.provider).packageName
+                    val pkg = PROVIDERS[rec.provider]?.packageName.orEmpty()
                     onOpen(
                         providerApp?.let { AppsRepository.launchIntent(context, it) }
                             ?: Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=$pkg"))
                                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
                     )
                 },
-                onInfo = { onMessage(R.string.coming_soon) },
+                // Google TV's own search finds the title in every app, with a direct "Watch" link.
+                onInfo = {
+                    val search = Intent(GLOBAL_SEARCH).putExtra(SearchManager.QUERY, rec.title)
+                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    if (search.resolveActivity(context.packageManager) != null) onOpen(search)
+                    else onMessage(R.string.no_search)
+                },
                 onPrevious = { slide = (slide - 1).mod(recs.size) },
                 onNext = { slide = (slide + 1).mod(recs.size) },
                 modifier = Modifier

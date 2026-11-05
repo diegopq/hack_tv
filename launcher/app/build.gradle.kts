@@ -1,5 +1,17 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
+/**
+ * Local settings and API keys come from the .env file at the repository root (git-ignored),
+ * or from environment variables with the same names. See .env.example.
+ */
+val dotEnv: Map<String, String> = rootProject.file("../.env").takeIf { it.exists() }?.readLines()
+    ?.map { it.trim() }
+    ?.filter { it.isNotEmpty() && !it.startsWith("#") && "=" in it }
+    ?.associate { line -> line.substringBefore("=").trim() to line.substringAfter("=").trim().removeSurrounding("\"") }
+    ?: emptyMap()
+
+fun config(name: String): String = System.getenv(name)?.takeIf { it.isNotBlank() } ?: dotEnv[name].orEmpty()
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -14,8 +26,13 @@ android {
         applicationId = "io.github.diegopq.hacktv"
         minSdk = 31
         targetSdk = 36
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = 2
+        versionName = "0.2.0"
+
+        // Without a key the banner shows the built-in sample recommendations.
+        buildConfigField("String", "TMDB_API_KEY", "\"${config("TMDB_API_KEY")}\"")
+        // Two-letter country for streaming availability; empty means the TV's own country.
+        buildConfigField("String", "TMDB_REGION", "\"${config("TMDB_REGION")}\"")
     }
 
     buildTypes {
@@ -36,6 +53,7 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 
