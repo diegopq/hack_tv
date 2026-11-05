@@ -20,6 +20,7 @@ body{font-family:Inter,system-ui,-apple-system,sans-serif;color:var(--text);-web
 /* Fondo: imagen de la recomendación o color de la app */
 .bd{position:absolute;inset:0;opacity:0;transition:opacity .9s ease;background-size:cover;background-position:center right;background-repeat:no-repeat}
 .bd.on{opacity:1}
+.still .bd,.still .hcopy,.still .art,.still .scroller,.still .track{transition:none!important;animation:none!important}
 .grain{position:absolute;inset:0;opacity:.07;mix-blend-mode:overlay;pointer-events:none;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
 .scrim{position:absolute;inset:0;pointer-events:none;
@@ -165,9 +166,9 @@ header{position:absolute;z-index:10;top:0;left:0;right:0;height:150px;padding:0 
   <header>
     <div class="left"><div class="pill"><div class="chip" data-f data-act="search" id="c-search"></div></div></div>
     <nav class="pill">
-      <div class="chip active" data-f data-tab="home">Inicio</div>
-      <div class="chip" data-f data-tab="apps">Apps</div>
-      <div class="chip" data-f data-tab="settings">Ajustes</div>
+      <div class="chip active" data-f data-tab="home" data-t="home"></div>
+      <div class="chip" data-f data-tab="apps" data-t="apps"></div>
+      <div class="chip" data-f data-tab="settings" data-t="settings"></div>
     </nav>
     <div class="right">
       <div class="status" id="status"></div>
@@ -192,34 +193,80 @@ header{position:absolute;z-index:10;top:0;left:0;right:0;height:150px;padding:0 
         <div class="chev l" id="chev-l"></div><div class="chev r" id="chev-r"></div>
       </div>
       <div class="rows" id="rows">
-        <div class="row"><h2>Mis apps <small>Mantén OK para reordenar</small></h2><div class="track" id="t-apps"></div></div>
-        <div class="row"><h2>Reproducido recientemente <small>Desde tus apps</small></h2><div class="track" id="t-recent"></div></div>
-        <div class="row"><h2>Entradas</h2><div class="track" id="t-inputs"></div></div>
-        <div class="row"><h2>Sistema</h2><div class="track" id="t-system"></div></div>
+        <div class="row"><h2><span data-t="rowApps"></span> <small data-t="rowAppsSub"></small></h2><div class="track" id="t-apps"></div></div>
+        <div class="row"><h2><span data-t="rowRecent"></span> <small data-t="rowRecentSub"></small></h2><div class="track" id="t-recent"></div></div>
+        <div class="row"><h2 data-t="rowInputs"></h2><div class="track" id="t-inputs"></div></div>
+        <div class="row"><h2 data-t="rowSystem"></h2><div class="track" id="t-system"></div></div>
       </div>
     </div>
   </section>
 
   <section class="view page" id="v-apps">
-    <h1>Todas las apps</h1><div class="sub" id="apps-count"></div>
+    <h1 data-t="allApps"></h1><div class="sub" id="apps-count"></div>
     <div class="clip"><div class="slide" id="slide-apps"><div class="grid" id="grid"></div></div></div>
   </section>
 
   <section class="view page" id="v-settings">
-    <h1>Ajustes</h1><div class="sub">Accesos directos a la configuración de la TV</div>
+    <h1 data-t="settings"></h1><div class="sub" data-t="settingsSub"></div>
     <div class="clip"><div class="slide"><div class="cards" id="cards"></div></div></div>
   </section>
 
   <div class="toast" id="toast"></div>
-  <div class="credit">Imágenes de muestra: TVmaze (CC BY-SA)</div>
-  <div class="hint" id="hint">
-    <span><kbd>← ↑ ↓ →</kbd>Navegar</span><span><kbd>← →</kbd>en los botones: otra recomendación</span><span><kbd>Enter</kbd>Abrir</span><span><kbd>Esc</kbd>Atrás</span><span><kbd>Clic</kbd>Enfocar, otro clic abre</span>
-    <span><kbd>A</kbd>Botón apps</span><span><kbd>S</kbd>Botón ajustes</span><span><kbd>H</kbd>Ayuda</span>
-  </div>
+  <div class="credit" data-t="credit"></div>
+  <div class="hint" id="hint"></div>
 </div>
 
 <script>
 const $ = s => document.querySelector(s);
+const q = new URLSearchParams(location.search);
+
+/* ---------- Idiomas ----------
+   Para agregar otro idioma: copia el bloque "en", tradúcelo y añade su código a LANGS.
+   Los textos de cada elemento (apps, series, ajustes) usan {es:'…', en:'…'}. */
+const I18N = {
+  es: {
+    locale:'es-MX', langName:'Español', title:'Launcher TV · Maqueta',
+    search:'Buscar', home:'Inicio', apps:'Apps', settings:'Ajustes',
+    moreInfo:'Más info', watchOn:a => `Ver en ${a}`, availableOn:a => `Disponible en ${a}`, series:'Serie',
+    rowApps:'Mis apps', rowAppsSub:'Mantén OK para reordenar', rowRecent:'Reproducido recientemente', rowRecentSub:'Desde tus apps',
+    rowInputs:'Entradas', rowSystem:'Sistema',
+    allApps:'Todas las apps', installed:n => `${n} apps instaladas`, settingsSub:'Accesos directos a la configuración de la TV',
+    credit:'Imágenes de muestra: TVmaze (CC BY-SA)',
+    ep:(s, e) => `T${s} · E${e}`, left:m => `Quedan ${m} min`,
+    tSearch:'Búsqueda por voz o teclado', tOpen:x => `Abriendo ${x}…`, tOpenIn:(t, a) => `Abriendo ${t} en ${a}…`,
+    tInfo:'Ficha con temporadas, reparto y tráiler', tResume:(t, ep, a) => `Reanudando ${t} (${ep}) en ${a}…`,
+    tInput:x => `Cambiando a ${x}…`, tLang:'Idioma: Español',
+    hint:[['← ↑ ↓ →','Navegar'], ['← →','en los botones: otra recomendación'], ['Enter','Abrir'], ['Esc','Atrás'],
+          ['Clic','Enfocar, otro clic abre'], ['A','Botón apps'], ['S','Botón ajustes'], ['L','Idioma'], ['H','Ayuda']],
+  },
+  en: {
+    locale:'en-US', langName:'English', title:'TV Launcher · Mockup',
+    search:'Search', home:'Home', apps:'Apps', settings:'Settings',
+    moreInfo:'More info', watchOn:a => `Watch on ${a}`, availableOn:a => `Available on ${a}`, series:'Series',
+    rowApps:'My apps', rowAppsSub:'Hold OK to reorder', rowRecent:'Recently played', rowRecentSub:'From your apps',
+    rowInputs:'Inputs', rowSystem:'System',
+    allApps:'All apps', installed:n => `${n} installed apps`, settingsSub:'Shortcuts to your TV settings',
+    credit:'Sample images: TVmaze (CC BY-SA)',
+    ep:(s, e) => `S${s} · E${e}`, left:m => `${m} min left`,
+    tSearch:'Voice or keyboard search', tOpen:x => `Opening ${x}…`, tOpenIn:(t, a) => `Opening ${t} on ${a}…`,
+    tInfo:'Details with seasons, cast and trailer', tResume:(t, ep, a) => `Resuming ${t} (${ep}) on ${a}…`,
+    tInput:x => `Switching to ${x}…`, tLang:'Language: English',
+    hint:[['← ↑ ↓ →','Navigate'], ['← →','on the buttons: next recommendation'], ['Enter','Open'], ['Esc','Back'],
+          ['Click','Focus, click again to open'], ['A','Apps button'], ['S','Settings button'], ['L','Language'], ['H','Help']],
+  },
+};
+const LANGS = Object.keys(I18N);
+const LANG_KEY = 'hacktv.lang';
+function initialLang() {
+  if (LANGS.includes(q.get('lang'))) return q.get('lang');
+  try { const s = localStorage.getItem(LANG_KEY); if (LANGS.includes(s)) return s; } catch (e) {}
+  const nav = (navigator.language || 'en').slice(0, 2).toLowerCase();
+  return LANGS.includes(nav) ? nav : 'en';
+}
+let lang = initialLang(), T = I18N[lang];
+const L = v => (v && typeof v === 'object') ? (v[lang] ?? v.en) : v;
+
+/* ---------- Íconos ---------- */
 const svg = p => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
 const ICON = {
   search: svg('<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>'),
@@ -233,10 +280,11 @@ const ICON = {
   sound: svg('<path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/>'),
   remote: svg('<rect x="7" y="2" width="10" height="20" rx="4"/><circle cx="12" cy="8" r="2"/><path d="M10 14h.01M14 14h.01M10 17h.01M14 17h.01"/>'),
   sparkle: svg('<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/><path d="M19 16l.6 1.6 1.6.6-1.6.6L19 20.4l-.6-1.6-1.6-.6 1.6-.6z"/>'),
-  apps: svg('<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>'),
   storage: svg('<ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/>'),
+  globe: svg('<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/>'),
 };
 
+/* ---------- Datos ---------- */
 const APPS = [
   {id:'netflix', name:'Netflix', bg:'#000', a:'#b0060f', b:'#3a0004', logo:'<span class="lg-netflix">NETFLIX</span>'},
   {id:'youtube', name:'YouTube', bg:'#0f0f0f', a:'#b80d17', b:'#2a0909', logo:'<span class="lg-yt"><i></i>YouTube</span>'},
@@ -253,37 +301,61 @@ const APPS = [
   {id:'para', name:'Paramount+', bg:'linear-gradient(135deg,#0064ff,#002a8f)', a:'#0050d0', b:'#001540', logo:'<span class="lg-word" style="font-weight:700">Paramount+</span>'},
   {id:'kodi', name:'Kodi', bg:'linear-gradient(135deg,#17b2e7,#0b5d82)', a:'#0f86b0', b:'#05263a', logo:'<span class="lg-word" style="font-size:3em">kodi</span>'},
   {id:'ytm', name:'YouTube Music', bg:'#0f0f0f', a:'#a80c14', b:'#200606', logo:'<span class="lg-word" style="font-size:2.1em">YouTube Music</span>'},
-  {id:'files', name:'Archivos', bg:'linear-gradient(135deg,#2b3440,#161b22)', a:'#3a4a5c', b:'#10161d', logo:'<span class="lg-word" style="font-size:2.3em">Archivos</span>'},
+  {id:'files', name:{es:'Archivos', en:'Files'}, bg:'linear-gradient(135deg,#2b3440,#161b22)', a:'#3a4a5c', b:'#10161d', logo:'<span class="lg-word lg-name" style="font-size:2.3em"></span>'},
 ];
 const FAV = ['netflix','youtube','prime','disney','max','vix','spotify','plex','play'];
 const IMG = id => `https://static.tvmaze.com/uploads/images/original_untouched/${id}.jpg`;
 
-/* Contenido de muestra. En la app real viene de TMDB, filtrado por las apps instaladas y región México. */
+/* Contenido de muestra. En la app real viene de TMDB (con language=es-MX / en-US), filtrado por las apps instaladas y la región. */
 const SHOWS = {
-  stranger:{title:'Stranger Things', app:'netflix', year:2016, genres:'Drama, Terror, Ciencia ficción', img:IMG('410/1025588'),
-    desc:'En Hawkins, un grupo de amigos enfrenta fuerzas sobrenaturales y experimentos secretos tras la desaparición de un niño.'},
-  wednesday:{title:'Merlina', app:'netflix', year:2022, genres:'Comedia, Misterio', img:IMG('423/1059627'),
-    desc:'Merlina Addams llega a la Academia Nevermore y queda envuelta en una serie de asesinatos que sacude al pueblo.'},
-  squid:{title:'El juego del calamar', app:'netflix', year:2021, genres:'Drama, Suspenso', img:IMG('551/1377828'),
-    desc:'Cientos de personas endeudadas aceptan competir en juegos infantiles por un premio millonario, con consecuencias mortales.'},
-  boys:{title:'The Boys', app:'prime', year:2019, genres:'Acción, Fantasía', img:IMG('265/664986'),
-    desc:'Un grupo de vigilantes se propone exponer a los superhéroes corruptos que abusan de sus poderes.'},
-  reacher:{title:'Reacher', app:'prime', year:2022, genres:'Acción, Suspenso', img:IMG('631/1577970'),
-    desc:'Jack Reacher, exinvestigador de la policía militar, llega a un pueblo y queda atrapado en una conspiración.'},
-  mando:{title:'The Mandalorian', app:'disney', year:2019, genres:'Acción, Aventura', img:IMG('245/612595'),
-    desc:'Un cazarrecompensas solitario recorre los confines de la galaxia, lejos de la autoridad de la Nueva República.'},
-  andor:{title:'Andor', app:'disney', year:2022, genres:'Ciencia ficción, Espionaje', img:IMG('412/1030745'),
-    desc:'La historia de Cassian Andor y de los años que encendieron la chispa de la Rebelión.'},
-  bear:{title:'The Bear', app:'disney', year:2022, genres:'Drama, Comedia', img:IMG('500/1251717'),
-    desc:'Un chef de alta cocina regresa a Chicago para hacerse cargo del pequeño restaurante de su familia.'},
-  shogun:{title:'Shōgun', app:'disney', year:2024, genres:'Drama, Historia', img:IMG('506/1265761'),
-    desc:'Japón, año 1600: un navegante inglés naufraga y queda en medio de una lucha por el poder entre señores feudales.'},
-  lastofus:{title:'The Last of Us', app:'max', year:2023, genres:'Drama, Acción', img:IMG('442/1106984'),
-    desc:'Veinte años después de una pandemia, Joel debe sacar a Ellie de una zona de cuarentena y cruzar un país devastado.'},
-  hotd:{title:'La casa del dragón', app:'max', year:2022, genres:'Drama, Fantasía', img:IMG('488/1221139'),
-    desc:'La casa Targaryen se divide en una guerra por el Trono de Hierro, 200 años antes de Game of Thrones.'},
-  lotus:{title:'The White Lotus', app:'max', year:2021, genres:'Drama, Comedia', img:IMG('429/1072776'),
-    desc:'Una semana en un resort de lujo saca a la luz los secretos de huéspedes y empleados.'},
+  stranger:{title:'Stranger Things', app:'netflix', year:2016, img:IMG('410/1025588'),
+    genres:{es:'Drama, Terror, Ciencia ficción', en:'Drama, Horror, Sci-Fi'},
+    desc:{es:'En Hawkins, un grupo de amigos enfrenta fuerzas sobrenaturales y experimentos secretos tras la desaparición de un niño.',
+          en:'In Hawkins, a group of friends faces supernatural forces and secret experiments after a boy disappears.'}},
+  wednesday:{title:{es:'Merlina', en:'Wednesday'}, app:'netflix', year:2022, img:IMG('423/1059627'),
+    genres:{es:'Comedia, Misterio', en:'Comedy, Mystery'},
+    desc:{es:'Merlina Addams llega a la Academia Nevermore y queda envuelta en una serie de asesinatos que sacude al pueblo.',
+          en:'Wednesday Addams arrives at Nevermore Academy and gets caught up in a string of murders that shakes the town.'}},
+  squid:{title:{es:'El juego del calamar', en:'Squid Game'}, app:'netflix', year:2021, img:IMG('551/1377828'),
+    genres:{es:'Drama, Suspenso', en:'Drama, Thriller'},
+    desc:{es:'Cientos de personas endeudadas aceptan competir en juegos infantiles por un premio millonario, con consecuencias mortales.',
+          en:"Hundreds of people in debt agree to compete in children's games for a huge cash prize, with deadly consequences."}},
+  boys:{title:'The Boys', app:'prime', year:2019, img:IMG('265/664986'),
+    genres:{es:'Acción, Fantasía', en:'Action, Fantasy'},
+    desc:{es:'Un grupo de vigilantes se propone exponer a los superhéroes corruptos que abusan de sus poderes.',
+          en:'A group of vigilantes sets out to expose corrupt superheroes who abuse their powers.'}},
+  reacher:{title:'Reacher', app:'prime', year:2022, img:IMG('631/1577970'),
+    genres:{es:'Acción, Suspenso', en:'Action, Thriller'},
+    desc:{es:'Jack Reacher, exinvestigador de la policía militar, llega a un pueblo y queda atrapado en una conspiración.',
+          en:'Jack Reacher, a former military police investigator, arrives in a small town and gets caught up in a conspiracy.'}},
+  mando:{title:'The Mandalorian', app:'disney', year:2019, img:IMG('245/612595'),
+    genres:{es:'Acción, Aventura', en:'Action, Adventure'},
+    desc:{es:'Un cazarrecompensas solitario recorre los confines de la galaxia, lejos de la autoridad de la Nueva República.',
+          en:'A lone bounty hunter travels the outer reaches of the galaxy, far from the authority of the New Republic.'}},
+  andor:{title:'Andor', app:'disney', year:2022, img:IMG('412/1030745'),
+    genres:{es:'Ciencia ficción, Espionaje', en:'Sci-Fi, Espionage'},
+    desc:{es:'La historia de Cassian Andor y de los años que encendieron la chispa de la Rebelión.',
+          en:'The story of Cassian Andor and the years that sparked the Rebellion.'}},
+  bear:{title:'The Bear', app:'disney', year:2022, img:IMG('500/1251717'),
+    genres:{es:'Drama, Comedia', en:'Drama, Comedy'},
+    desc:{es:'Un chef de alta cocina regresa a Chicago para hacerse cargo del pequeño restaurante de su familia.',
+          en:"A fine-dining chef returns to Chicago to run his family's small sandwich shop."}},
+  shogun:{title:'Shōgun', app:'disney', year:2024, img:IMG('506/1265761'),
+    genres:{es:'Drama, Historia', en:'Drama, History'},
+    desc:{es:'Japón, año 1600: un navegante inglés naufraga y queda en medio de una lucha por el poder entre señores feudales.',
+          en:'Japan, 1600: an English navigator is shipwrecked and caught in a power struggle between feudal lords.'}},
+  lastofus:{title:'The Last of Us', app:'max', year:2023, img:IMG('442/1106984'),
+    genres:{es:'Drama, Acción', en:'Drama, Action'},
+    desc:{es:'Veinte años después de una pandemia, Joel debe sacar a Ellie de una zona de cuarentena y cruzar un país devastado.',
+          en:'Twenty years after a pandemic, Joel must smuggle Ellie out of a quarantine zone and across a devastated country.'}},
+  hotd:{title:{es:'La casa del dragón', en:'House of the Dragon'}, app:'max', year:2022, img:IMG('488/1221139'),
+    genres:{es:'Drama, Fantasía', en:'Drama, Fantasy'},
+    desc:{es:'La casa Targaryen se divide en una guerra por el Trono de Hierro, 200 años antes de Game of Thrones.',
+          en:'House Targaryen splits in a war for the Iron Throne, 200 years before Game of Thrones.'}},
+  lotus:{title:'The White Lotus', app:'max', year:2021, img:IMG('429/1072776'),
+    genres:{es:'Drama, Comedia', en:'Drama, Comedy'},
+    desc:{es:'Una semana en un resort de lujo saca a la luz los secretos de huéspedes y empleados.',
+          en:'A week at a luxury resort brings out the secrets of guests and staff.'}},
 };
 const RECS = {
   mix:['stranger','lastofus','boys','mando','wednesday','hotd'],
@@ -293,60 +365,92 @@ const RECS = {
   max:['lastofus','hotd','lotus'],
 };
 const RECENT = [
-  {id:'lastofus', ep:'T2 · E3', left:'Quedan 24 min', p:.62},
-  {id:'andor', ep:'T2 · E5', left:'Quedan 31 min', p:.35},
-  {id:'reacher', ep:'T3 · E2', left:'Quedan 9 min', p:.85},
-  {id:'stranger', ep:'T5 · E1', left:'Quedan 52 min', p:.15},
-  {id:'shogun', ep:'T1 · E7', left:'Quedan 28 min', p:.48},
-  {id:'bear', ep:'T4 · E2', left:'Quedan 12 min', p:.6},
+  {id:'lastofus', s:2, e:3, min:24, p:.62},
+  {id:'andor', s:2, e:5, min:31, p:.35},
+  {id:'reacher', s:3, e:2, min:9, p:.85},
+  {id:'stranger', s:5, e:1, min:52, p:.15},
+  {id:'shogun', s:1, e:7, min:28, p:.48},
+  {id:'bear', s:4, e:2, min:12, p:.6},
 ];
-const INPUTS = [1,2,3].map(n => ({id:'hdmi'+n, name:'HDMI '+n, sub:'Entrada', icon:'hdmi'}));
+const epLabel = r => T.ep(r.s, r.e);
+const INPUTS = [1,2,3].map(n => ({id:'hdmi'+n, name:'HDMI '+n, sub:{es:'Entrada', en:'Input'}, icon:'hdmi'}));
 const SYSTEM = [
-  {id:'settings', name:'Ajustes', sub:'Todos los ajustes', icon:'sliders'},
-  {id:'net', name:'Red e Internet', sub:'Wi-Fi y Ethernet', icon:'wifi'},
-  {id:'display', name:'Imagen', sub:'Modo y pantalla', icon:'display'},
-  {id:'sound', name:'Sonido', sub:'Salida y barra', icon:'sound'},
-  {id:'remote', name:'Control y accesorios', sub:'Bluetooth', icon:'remote'},
-  {id:'custom', name:'Personalizar', sub:'Apps, fondo y botones', icon:'sparkle'},
-  {id:'allapps', name:'Apps', sub:'Administrar', icon:'apps'},
-  {id:'storage', name:'Almacenamiento', sub:'Espacio libre', icon:'storage'},
+  {id:'settings', name:{es:'Ajustes', en:'Settings'}, sub:{es:'Todos los ajustes', en:'All settings'}, icon:'sliders'},
+  {id:'net', name:{es:'Red e Internet', en:'Network & Internet'}, sub:{es:'Wi-Fi y Ethernet', en:'Wi-Fi and Ethernet'}, icon:'wifi'},
+  {id:'display', name:{es:'Imagen', en:'Picture'}, sub:{es:'Modo y pantalla', en:'Mode and display'}, icon:'display'},
+  {id:'sound', name:{es:'Sonido', en:'Sound'}, sub:{es:'Salida y barra', en:'Output and soundbar'}, icon:'sound'},
+  {id:'remote', name:{es:'Control y accesorios', en:'Remotes & accessories'}, sub:'Bluetooth', icon:'remote'},
+  {id:'custom', name:{es:'Personalizar', en:'Customize'}, sub:{es:'Apps, fondo y botones', en:'Apps, wallpaper and buttons'}, icon:'sparkle'},
+  {id:'storage', name:{es:'Almacenamiento', en:'Storage'}, sub:{es:'Espacio libre', en:'Free space'}, icon:'storage'},
+  {id:'lang', name:{es:'Idioma', en:'Language'}, sub:{es:'Español', en:'English'}, icon:'globe'},
 ];
 const byId = {}; [...APPS, ...INPUTS, ...SYSTEM].forEach(x => byId[x.id] = x);
 Object.values(SHOWS).forEach(s => { const i = new Image(); i.src = s.img; });
 
-/* ---------- Render ---------- */
-$('#c-search').innerHTML = ICON.search + 'Buscar';
+/* ---------- Estructura (los textos los llena applyLang) ---------- */
 $('#status').innerHTML = ICON.wifi;
-$('#b-info').innerHTML = ICON.info + 'Más info';
 $('#chev-l').innerHTML = ICON.left; $('#chev-r').innerHTML = ICON.right;
 const mini = app => `<span class="mini" style="background:${app.bg}">${app.logo}</span>`;
 const appTile = (a, row) => `<div class="tile" data-f ${row ? `data-row="${row}"` : ''} data-id="${a.id}" style="background:${a.bg}">${a.logo}</div>`;
-const glassTile = (x, row) => `<div class="tile glass" data-f ${row ? `data-row="${row}"` : ''} data-id="${x.id}">${ICON[x.icon]}<div class="t">${x.name}</div><div class="s">${x.sub}</div></div>`;
+const glassTile = (x, row) => `<div class="tile glass" data-f ${row ? `data-row="${row}"` : ''} data-id="${x.id}">${ICON[x.icon]}<div class="t"></div><div class="s"></div></div>`;
 $('#t-apps').innerHTML = FAV.map(id => appTile(byId[id], 'apps')).join('');
 $('#t-recent').innerHTML = RECENT.map((r, i) => {
   const s = SHOWS[r.id];
   return `<div class="tile media" data-f data-row="recent" data-recent="${i}" style="background-image:url(${s.img})">
     ${mini(byId[s.app])}
-    <div class="minfo"><div class="t">${s.title}</div><div class="s">${r.ep} · ${r.left}</div></div>
+    <div class="minfo"><div class="t"></div><div class="s"></div></div>
     <div class="prog"><i style="width:${r.p * 100}%"></i></div></div>`;
 }).join('');
 $('#t-inputs').innerHTML = INPUTS.map(x => glassTile(x, 'inputs')).join('');
 $('#t-system').innerHTML = SYSTEM.slice(0, 6).map(x => glassTile(x, 'system')).join('');
-$('#grid').innerHTML = APPS.map(a => `<div class="cell">${appTile(a)}<div class="name">${a.name}</div></div>`).join('');
-$('#apps-count').textContent = `${APPS.length} apps instaladas`;
+$('#grid').innerHTML = APPS.map(a => `<div class="cell">${appTile(a)}<div class="name"></div></div>`).join('');
 $('#cards').innerHTML = SYSTEM.map(x => glassTile(x)).join('');
+
+/* ---------- Aplicar idioma ---------- */
+function applyLang() {
+  T = I18N[lang];
+  document.documentElement.lang = lang;
+  document.title = T.title;
+  document.querySelectorAll('[data-t]').forEach(el => el.textContent = T[el.dataset.t]);
+  $('#c-search').innerHTML = ICON.search + T.search;
+  $('#b-info').innerHTML = ICON.info + T.moreInfo;
+  $('#hint').innerHTML = T.hint.map(([k, v]) => `<span><kbd>${k}</kbd>${v}</span>`).join('');
+  $('#apps-count').textContent = T.installed(APPS.length);
+  document.querySelectorAll('.tile.glass[data-id]').forEach(el => {
+    const it = byId[el.dataset.id];
+    el.querySelector('.t').textContent = L(it.name);
+    el.querySelector('.s').textContent = L(it.sub);
+  });
+  document.querySelectorAll('#t-recent .tile').forEach(el => {
+    const r = RECENT[+el.dataset.recent];
+    el.querySelector('.t').textContent = L(SHOWS[r.id].title);
+    el.querySelector('.s').textContent = `${epLabel(r)} · ${T.left(r.min)}`;
+  });
+  document.querySelectorAll('[data-id] .lg-name').forEach(el => el.textContent = L(byId[el.closest('[data-id]').dataset.id].name));
+  document.querySelectorAll('#grid .cell').forEach(c => c.querySelector('.name').textContent = L(byId[c.querySelector('.tile').dataset.id].name));
+  tick();
+  heroShow = null; renderHero(true);
+}
+function setLang(l) {
+  if (!LANGS.includes(l)) return;
+  lang = l;
+  try { localStorage.setItem(LANG_KEY, l); } catch (e) {}
+  applyLang();
+  toast(T.tLang);
+}
+const nextLang = () => setLang(LANGS[(LANGS.indexOf(lang) + 1) % LANGS.length]);
 
 /* ---------- Escalado y reloj ---------- */
 const stage = $('#stage');
 const fit = () => stage.style.transform = `translate(-50%,-50%) scale(${Math.min(innerWidth / 1920, innerHeight / 1080)})`;
 addEventListener('resize', fit); fit();
-const tick = () => {
+function tick() {
   const d = new Date();
-  $('#time').textContent = d.toLocaleTimeString('es-MX', {hour:'numeric', minute:'2-digit'});
-  const f = d.toLocaleDateString('es-MX', {weekday:'long', day:'numeric', month:'long'});
+  $('#time').textContent = d.toLocaleTimeString(T.locale, {hour:'numeric', minute:'2-digit'});
+  const f = d.toLocaleDateString(T.locale, {weekday:'long', day:'numeric', month:'long'});
   $('#date').textContent = f.charAt(0).toUpperCase() + f.slice(1);
-};
-tick(); setInterval(tick, 15000);
+}
+setInterval(tick, 15000);
 
 /* ---------- Fondo ---------- */
 let bdi = 0, bdKey = null;
@@ -373,11 +477,11 @@ function renderHero(now) {
     if (heroShow === id) return; heroShow = id;
     const copy = $('#hcopy'); copy.classList.add('out');
     setTimeout(() => {
-      $('#h-prov').innerHTML = `${mini(app)}<span>Disponible en ${app.name}</span>`;
-      $('#h-title').textContent = s.title;
-      $('#h-meta').textContent = `${s.year} · ${s.genres} · Serie`;
-      $('#h-desc').textContent = s.desc;
-      $('#b-watch').innerHTML = `${ICON.play}Ver en ${app.name}`;
+      $('#h-prov').innerHTML = `${mini(app)}<span>${T.availableOn(L(app.name))}</span>`;
+      $('#h-title').textContent = L(s.title);
+      $('#h-meta').textContent = `${s.year} · ${L(s.genres)} · ${T.series}`;
+      $('#h-desc').textContent = L(s.desc);
+      $('#b-watch').innerHTML = `${ICON.play}${T.watchOn(L(app.name))}`;
       copy.classList.remove('out');
     }, now ? 0 : 180);
   };
@@ -392,7 +496,7 @@ function step(d) {
   const n = RECS[recKey].length; slide = (slide + d + n) % n; renderHero(true); lastStep = Date.now();
 }
 let lastStep = Date.now();
-const NOAUTO = new URLSearchParams(location.search).get('autoplay') === '0';
+const NOAUTO = q.get('autoplay') === '0';
 setInterval(() => {   // avance automático mientras estás en el banner o en Mis apps
   if (NOAUTO || view !== 'home' || !cur || Date.now() - lastStep < 9000) return;
   if (cur.closest('#hero') || cur.dataset.row === 'apps' || cur.closest('header')) step(1);
@@ -487,11 +591,12 @@ function toast(msg) {
 function activate() {
   const d = cur.dataset;
   if (d.tab) return move('down');
-  if (d.act === 'search') return toast('Búsqueda por voz o teclado');
-  if (d.act === 'watch') { const s = SHOWS[curShow()]; return toast(`Abriendo ${s.title} en ${byId[s.app].name}…`); }
-  if (d.act === 'info') return toast('Ficha con temporadas, reparto y tráiler');
-  if (d.recent) { const r = RECENT[+d.recent], s = SHOWS[r.id]; return toast(`Reanudando ${s.title} (${r.ep}) en ${byId[s.app].name}…`); }
-  if (d.id) { const it = byId[d.id]; toast(d.id.startsWith('hdmi') ? `Cambiando a ${it.name}…` : `Abriendo ${it.name}…`); }
+  if (d.act === 'search') return toast(T.tSearch);
+  if (d.act === 'watch') { const s = SHOWS[curShow()]; return toast(T.tOpenIn(L(s.title), L(byId[s.app].name))); }
+  if (d.act === 'info') return toast(T.tInfo);
+  if (d.recent) { const r = RECENT[+d.recent], s = SHOWS[r.id]; return toast(T.tResume(L(s.title), epLabel(r), L(byId[s.app].name))); }
+  if (d.id === 'lang') return nextLang();
+  if (d.id) { const it = byId[d.id]; toast(d.id.startsWith('hdmi') ? T.tInput(L(it.name)) : T.tOpen(L(it.name))); }
 }
 function goHome() {
   setFocus(document.querySelector('[data-tab="home"]'));
@@ -507,7 +612,8 @@ addEventListener('keydown', e => {
   const lk = k.toLowerCase();
   if (lk === 'a') { setFocus(document.querySelector('[data-tab="apps"]')); setFocus(document.querySelector('#grid .tile')); }
   if (lk === 's') { setFocus(document.querySelector('[data-tab="settings"]')); setFocus(document.querySelector('#cards .tile')); }
-  if (REMOTE[lk]) toast(`Abriendo ${byId[REMOTE[lk]].name}…`);
+  if (REMOTE[lk]) toast(T.tOpen(L(byId[REMOTE[lk]].name)));
+  if (lk === 'l') nextLang();
   if (lk === 'h') $('#hint').classList.toggle('off');
 });
 
@@ -522,9 +628,9 @@ stage.addEventListener('click', e => {
 
 /* ---------- Inicio ----------
    Estado inicial opcional por URL (para capturas y demos):
-   ?app=max · ?focus=recent&recent=2 · ?focus=hero · ?view=apps|settings · ?hint=0 · ?autoplay=0 */
-const q = new URLSearchParams(location.search);
-renderHero(true);
+   ?lang=es|en · ?still=1 · ?app=max · ?focus=recent&recent=2 · ?focus=hero · ?view=apps|settings · ?hint=0 · ?autoplay=0 */
+if (q.get('still') === '1') stage.classList.add('still');   // sin animaciones, para capturas
+applyLang();
 setFocus(document.querySelector(`#t-apps [data-id="${q.get('app')}"]`) || document.querySelector('#t-apps .tile'));
 if (q.get('focus') === 'hero') setFocus($('#b-watch'));
 if (q.get('focus') === 'recent') setFocus(document.querySelectorAll('#t-recent .tile')[+q.get('recent') || 0]);

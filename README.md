@@ -4,7 +4,7 @@ Custom Android TV launcher: ad-free home screen, remote button remapping, and st
 
 It started as a way to speed up and clean up a Hisense Android TV (Android 12, MediaTek MT9689, 2.4 GB RAM) without buying third-party apps.
 
-**[▶ Try the interactive mockup](https://diegopq.github.io/hack_tv/)**: use your keyboard as the remote, or click and tap.
+**[▶ Try the interactive mockup](https://diegopq.github.io/hack_tv/)** ([English](https://diegopq.github.io/hack_tv/?lang=en) · [Español](https://diegopq.github.io/hack_tv/?lang=es)): use your keyboard as the remote, or click and tap.
 
 ![Home screen with the recommendations banner](docs/screenshots/home.jpg)
 
@@ -14,7 +14,7 @@ It started as a way to speed up and clean up a Hisense Android TV (Android 12, M
 | **Recommendations follow the focused app** | **Settings shortcuts** |
 | ![Banner showing Disney+ recommendations](docs/screenshots/home-disney.jpg) | ![Settings shortcuts](docs/screenshots/settings.jpg) |
 
-> The UI is in Spanish. Screenshots come from the HTML mockup, not the Android app yet.
+> Screenshots come from the HTML mockup, not the Android app yet. The UI is available in English and Spanish.
 
 ## Status
 
@@ -46,10 +46,23 @@ Use the keyboard as the remote:
 | ← → on the banner buttons | Previous or next recommendation |
 | A / S | Simulates the remote's App list and Settings buttons |
 | N / Y / P / D | Simulates the Netflix, YouTube, Prime Video, and Disney+ buttons |
+| L | Switch language (English / Spanish) |
 | H | Show or hide the help bar |
 | Click or tap | Focus an item; click again to open it |
 
-URL parameters set a starting state, which is handy for demos and screenshots: `?app=max`, `?focus=recent&recent=2`, `?focus=hero`, `?view=apps`, `?view=settings`, `?hint=0`, `?autoplay=0`.
+### Languages
+
+The mockup supports English and Spanish. It picks the language in this order:
+
+1. The `?lang=en` or `?lang=es` URL parameter.
+2. The language you last chose with **L** or the **Language** card in Settings. It's saved in your browser.
+3. Your browser's language, falling back to English.
+
+All UI text lives in the `I18N` dictionary in [`diseno/maqueta.html`](diseno/maqueta.html). To add a language, copy the `en` block, translate it, and add the translations to the `{es:…, en:…}` fields of the sample data. The Android app will use standard Android string resources instead, and request TMDB data in the TV's language.
+
+### URL parameters
+
+URL parameters set a starting state, which is handy for demos and screenshots: `?lang=en`, `?app=max`, `?focus=recent&recent=2`, `?focus=hero`, `?view=apps`, `?view=settings`, `?hint=0`, `?autoplay=0`, `?still=1` (turns off animations).
 
 The sample artwork comes from [TVmaze](https://www.tvmaze.com/) (CC BY-SA) and loads from their servers.
 
