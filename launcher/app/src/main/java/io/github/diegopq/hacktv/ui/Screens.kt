@@ -65,6 +65,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 private const val GLOBAL_SEARCH = "android.search.action.GLOBAL_SEARCH"
+private val TOP_BAR_HEIGHT = 75.dp
 
 private val RowPadding = PaddingValues(horizontal = 60.dp, vertical = 6.dp)
 private val TileSize = Modifier.size(156.dp, 88.dp)
@@ -120,7 +121,7 @@ fun HomeScreen(
     }
 
     val density = LocalDensity.current
-    val columnSpec = remember(density) { with(density) { minimalScroll(75.dp.toPx(), 12.dp.toPx()) } }
+    val columnSpec = remember(density) { with(density) { minimalScroll(6.dp.toPx(), 12.dp.toPx()) } }
     val rowSpec = remember(density) { with(density) { minimalScroll(60.dp.toPx(), 60.dp.toPx()) } }
 
     // The banner and the first row of apps fit on screen together: focusing either brings the banner back.
@@ -139,7 +140,13 @@ fun HomeScreen(
     }
 
     WithScrollSpec(columnSpec) {
-    LazyColumn(state = listState, contentPadding = PaddingValues(bottom = 48.dp)) {
+    // The list starts below the top bar: a focus group that overlapped the bar was never "below" it, so
+    // pressing Down on Search or a tab could not enter Home at all.
+    LazyColumn(
+        state = listState,
+        contentPadding = PaddingValues(bottom = 48.dp),
+        modifier = Modifier.padding(top = TOP_BAR_HEIGHT),
+    ) {
         if (rec != null) item(key = "hero") {
             Hero(
                 recommendation = rec,

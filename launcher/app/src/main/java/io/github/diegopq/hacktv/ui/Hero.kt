@@ -74,7 +74,7 @@ fun Hero(
 ) {
     val provider = PROVIDERS.getValue(recommendation.provider)
     val kind = stringResource(if (recommendation.isMovie) R.string.movie else R.string.series)
-    Column(modifier.fillMaxWidth().heightIn(min = 345.dp).padding(start = 60.dp, top = 98.dp, end = 60.dp)) {
+    Column(modifier.fillMaxWidth().heightIn(min = 270.dp).padding(start = 60.dp, top = 23.dp, end = 60.dp)) {
         AnimatedContent(
             targetState = recommendation,
             transitionSpec = { fadeIn(tween(260)) togetherWith fadeOut(tween(160)) },
