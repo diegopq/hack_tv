@@ -1,6 +1,15 @@
 package io.github.diegopq.hacktv.ui
 
 import android.app.SearchManager
+import androidx.compose.ui.input.key.type
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.draw.alpha
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.activity.compose.BackHandler
+import android.widget.Toast
 import android.content.Intent
 import android.net.Uri
 import android.provider.Settings
@@ -109,6 +118,8 @@ fun HomeScreen(
     onBackdrop: (String) -> Unit,
     onOpen: (Intent) -> Unit,
     onMessage: (Int) -> Unit,
+    onSaveOrder: (List<String>) -> Unit,
+    onHide: (String) -> Unit,
 ) {
     val context = LocalContext.current
     // The banner follows the focused app's service; apps without a catalog keep the current list.
@@ -133,6 +144,36 @@ fun HomeScreen(
         }
     }
     val fadeDistance = with(density) { 120.dp.toPx() }
+
+    // Hold OK on an app for its menu; Move picks it up and the arrows carry it along the row.
+    var menuApp by remember { mutableStateOf<LauncherApp?>(null) }
+    var movingPackage by remember { mutableStateOf<String?>(null) }
+    var movingOrder by remember { mutableStateOf(homeApps) }
+    val rowApps = if (movingPackage != null) movingOrder else homeApps
+    val appsRowState = rememberLazyListState()
+
+    fun startMove(app: LauncherApp) {
+        movingOrder = homeApps
+        movingPackage = app.packageName
+    }
+    fun moveBy(step: Int) {
+        val from = movingOrder.indexOfFirst { it.packageName == movingPackage }
+        val to = from + step
+        if (from < 0 || to !in movingOrder.indices) return
+        movingOrder = movingOrder.toMutableList().apply { add(to, removeAt(from)) }
+        scope.launch {
+            val visible = appsRowState.layoutInfo.visibleItemsInfo
+            val first = visible.firstOrNull()?.index ?: 0
+            val last = visible.lastOrNull()?.index ?: 0
+            if (to <= first) appsRowState.animateScrollToItem((to - 1).coerceAtLeast(0))
+            else if (to >= last) appsRowState.animateScrollToItem((to - (last - first) + 1).coerceAtLeast(0))
+        }
+    }
+    fun finishMove() {
+        onSaveOrder(movingOrder.map { it.packageName })
+        movingPackage = null
+    }
+    BackHandler(enabled = movingPackage != null) { finishMove() }
 
     LaunchedEffect(rec?.imageUrl) { rec?.let { onBackdrop(it.imageUrl) } }
     LaunchedEffect(recKey, slide, recs) {
@@ -181,18 +222,41 @@ fun HomeScreen(
             )
         }
         item(key = "apps") {
-            RowTitle(stringResource(R.string.row_my_apps))
+            RowTitle(
+                stringResource(R.string.row_my_apps),
+                hint = stringResource(if (movingPackage != null) R.string.moving_hint else R.string.my_apps_hint),
+            )
             WithScrollSpec(rowSpec) {
             LazyRow(
+                state = appsRowState,
                 contentPadding = RowPadding,
                 horizontalArrangement = Arrangement.spacedBy(15.dp),
                 modifier = Modifier.focusRestorer(),
             ) {
-                itemsIndexed(homeApps, key = { _, app -> app.packageName }) { i, app ->
+                itemsIndexed(rowApps, key = { _, app -> app.packageName }) { i, app ->
+                    val moving = movingPackage == app.packageName
                     AppTile(
                         app = app,
-                        onClick = { onOpen(AppsRepository.launchIntent(context, app)) },
-                        modifier = TileSize.then(if (i == 0) Modifier.focusRequester(firstAppRequester) else Modifier),
+                        onClick = {
+                            if (moving) finishMove()
+                            else if (movingPackage == null) onOpen(AppsRepository.launchIntent(context, app))
+                        },
+                        onLongClick = { if (movingPackage == null) menuApp = app },
+                        moving = moving,
+                        modifier = TileSize
+                            .then(if (i == 0) Modifier.focusRequester(firstAppRequester) else Modifier)
+                            .onPreviewKeyEvent { event ->
+                                if (!moving) return@onPreviewKeyEvent false
+                                when (event.key) {
+                                    Key.DirectionLeft, Key.DirectionRight -> {
+                                        if (event.type == KeyEventType.KeyDown) moveBy(if (event.key == Key.DirectionLeft) -1 else 1)
+                                        true
+                                    }
+                                    // Up and Down would drop the app somewhere else on the screen: they do nothing.
+                                    Key.DirectionUp, Key.DirectionDown -> true
+                                    else -> false
+                                }
+                            },
                         onFocused = {
                             showBanner()
                             SampleContent.providerKeyFor(app.packageName)?.let { recKey = it }
@@ -248,12 +312,34 @@ fun HomeScreen(
         }
     }
     }
+
+    menuApp?.let { app ->
+        AppMenu(
+            app = app,
+            hidden = false,
+            canMove = true,
+            onMove = { startMove(app) },
+            onToggleHidden = {
+                onHide(app.packageName)
+                Toast.makeText(context, context.getString(R.string.hidden_toast, app.label), Toast.LENGTH_LONG).show()
+            },
+            onInfo = { onOpen(appInfoIntent(app.packageName)) },
+            onDismiss = { menuApp = null },
+        )
+    }
 }
 
 /** Every installed app in a grid, alphabetically. The remote's App list button opens this page. */
 @Composable
-fun AppsScreen(apps: List<LauncherApp>, firstRequester: FocusRequester, onOpen: (Intent) -> Unit) {
+fun AppsScreen(
+    apps: List<LauncherApp>,
+    hidden: Set<String>,
+    firstRequester: FocusRequester,
+    onOpen: (Intent) -> Unit,
+    onSetHidden: (String, Boolean) -> Unit,
+) {
     val context = LocalContext.current
+    var menuApp by remember { mutableStateOf<LauncherApp?>(null) }
     Column(Modifier.fillMaxSize().padding(top = 93.dp)) {
         PageTitle(
             title = stringResource(R.string.all_apps),
@@ -266,16 +352,19 @@ fun AppsScreen(apps: List<LauncherApp>, firstRequester: FocusRequester, onOpen: 
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             itemsIndexed(apps, key = { _, app -> app.packageName }) { i, app ->
-                Column {
+                val isHidden = app.packageName in hidden
+                // Apps hidden from Home stay here, dimmed, so they can be shown again.
+                Column(Modifier.alpha(if (isHidden) 0.5f else 1f)) {
                     AppTile(
                         app = app,
                         onClick = { onOpen(AppsRepository.launchIntent(context, app)) },
+                        onLongClick = { menuApp = app },
                         modifier = Modifier.fillMaxWidth().aspectRatio(16f / 9f)
                             .then(if (i == 0) Modifier.focusRequester(firstRequester) else Modifier),
                     )
                     Spacer(Modifier.height(7.dp))
                     Text(
-                        app.label,
+                        if (isHidden) stringResource(R.string.hidden_label, app.label) else app.label,
                         fontSize = 10.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = HackColors.Muted,
@@ -285,6 +374,19 @@ fun AppsScreen(apps: List<LauncherApp>, firstRequester: FocusRequester, onOpen: 
                 }
             }
         }
+    }
+
+    menuApp?.let { app ->
+        val isHidden = app.packageName in hidden
+        AppMenu(
+            app = app,
+            hidden = isHidden,
+            canMove = false,
+            onMove = {},
+            onToggleHidden = { onSetHidden(app.packageName, !isHidden) },
+            onInfo = { onOpen(appInfoIntent(app.packageName)) },
+            onDismiss = { menuApp = null },
+        )
     }
 }
 

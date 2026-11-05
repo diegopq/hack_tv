@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -34,6 +35,8 @@ import io.github.diegopq.hacktv.ui.theme.HackColors
 
 private val TileShape = RoundedCornerShape(10.dp)
 private val FocusBorder = Border(BorderStroke(2.dp, Color.White), shape = TileShape)
+/** A tile being moved gets a blue outline, so it's clear the arrows now move it instead of the focus. */
+private val MovingBorder = Border(BorderStroke(3.dp, Color(0xFF8AB4F8)), shape = TileShape)
 
 /** An app tile: the app's TV banner, or its icon and name when it has no banner. */
 @Composable
@@ -41,14 +44,17 @@ fun AppTile(
     app: LauncherApp,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    onLongClick: (() -> Unit)? = null,
     onFocused: () -> Unit = {},
+    moving: Boolean = false,
 ) {
     Surface(
         onClick = onClick,
+        onLongClick = onLongClick,
         modifier = modifier.onFocusChanged { if (it.isFocused) onFocused() },
         shape = ClickableSurfaceDefaults.shape(TileShape),
-        scale = ClickableSurfaceDefaults.scale(focusedScale = 1.1f),
-        border = ClickableSurfaceDefaults.border(focusedBorder = FocusBorder),
+        scale = ClickableSurfaceDefaults.scale(focusedScale = if (moving) 1.14f else 1.1f),
+        border = ClickableSurfaceDefaults.border(focusedBorder = if (moving) MovingBorder else FocusBorder),
         colors = ClickableSurfaceDefaults.colors(
             containerColor = Color(0xFF16181D),
             contentColor = HackColors.Text,
@@ -124,10 +130,14 @@ fun GlassTile(
     }
 }
 
-/** A row title, such as "My apps". */
+/** A row title, such as "My apps", with an optional hint beside it. */
 @Composable
-fun RowTitle(text: String, modifier: Modifier = Modifier) {
-    Row(modifier.padding(start = 60.dp, bottom = 12.dp)) {
+fun RowTitle(text: String, modifier: Modifier = Modifier, hint: String? = null) {
+    Row(modifier.padding(start = 60.dp, bottom = 12.dp), verticalAlignment = Alignment.Bottom) {
         Text(text, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+        if (hint != null) {
+            Spacer(Modifier.width(8.dp))
+            Text(hint, fontSize = 10.sp, fontWeight = FontWeight.Medium, color = HackColors.Faint)
+        }
     }
 }

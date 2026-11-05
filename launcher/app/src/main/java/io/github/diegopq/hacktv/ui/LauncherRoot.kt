@@ -60,7 +60,8 @@ fun LauncherRoot(viewModel: LauncherViewModel, navigation: Flow<Tab>, initialTab
     val inputs by viewModel.inputs.collectAsStateWithLifecycle()
     val recommendations by viewModel.recommendations.collectAsStateWithLifecycle()
     val keyServiceOn by viewModel.keyServiceOn.collectAsStateWithLifecycle()
-    val homeApps = remember(apps) { AppsRepository.homeOrder(apps) }
+    val layout by viewModel.layout.collectAsStateWithLifecycle()
+    val homeApps = remember(apps, layout) { AppsRepository.homeOrder(apps, layout) }
 
     var tab by rememberSaveable { mutableStateOf(initialTab) }
     var backdropUrl by remember { mutableStateOf<String?>(null) }
@@ -128,8 +129,16 @@ fun LauncherRoot(viewModel: LauncherViewModel, navigation: Flow<Tab>, initialTab
                     onBackdrop = { backdropUrl = it },
                     onOpen = ::open,
                     onMessage = ::message,
+                    onSaveOrder = viewModel::saveOrder,
+                    onHide = { viewModel.setHidden(it, true) },
                 )
-                Tab.APPS -> AppsScreen(apps = apps, firstRequester = firstGridApp, onOpen = ::open)
+                Tab.APPS -> AppsScreen(
+                    apps = apps,
+                    hidden = layout.hidden,
+                    firstRequester = firstGridApp,
+                    onOpen = ::open,
+                    onSetHidden = viewModel::setHidden,
+                )
                 Tab.SETTINGS -> SettingsScreen(
                     keyServiceOn = keyServiceOn,
                     firstRequester = firstSetting,

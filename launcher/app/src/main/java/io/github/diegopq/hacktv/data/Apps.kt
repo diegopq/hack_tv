@@ -78,12 +78,18 @@ object AppsRepository {
         apps.sortedBy { it.label.lowercase() }
     }
 
-    /** Favorites first, in [FAVORITE_PACKAGES] order, then the other TV apps alphabetically. */
-    fun homeOrder(apps: List<LauncherApp>): List<LauncherApp> {
-        val byPackage = apps.associateBy { it.packageName }
+    /**
+     * My apps on Home: the user's order when there is one, then any app installed since, in the default
+     * order (favorites first, then the other TV apps alphabetically). Hidden apps are left out.
+     */
+    fun homeOrder(apps: List<LauncherApp>, layout: HomeLayout = HomeLayout()): List<LauncherApp> {
+        val visible = apps.filter { it.packageName !in layout.hidden }
+        val byPackage = visible.associateBy { it.packageName }
         val favorites = FAVORITE_PACKAGES.mapNotNull { byPackage[it] }
-        val rest = apps.filter { it.isTvApp && it.packageName !in FAVORITE_PACKAGES }
-        return favorites + rest
+        val default = favorites + visible.filter { it.isTvApp && it.packageName !in FAVORITE_PACKAGES }
+        if (layout.order.isEmpty()) return default
+        val ordered = layout.order.mapNotNull { byPackage[it] }
+        return ordered + default.filter { it.packageName !in layout.order }
     }
 
     fun launchIntent(context: Context, app: LauncherApp): Intent {

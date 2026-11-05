@@ -9,6 +9,8 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import io.github.diegopq.hacktv.data.AppsRepository
+import io.github.diegopq.hacktv.data.HomeLayout
+import io.github.diegopq.hacktv.data.HomeLayoutStore
 import io.github.diegopq.hacktv.data.Inputs
 import io.github.diegopq.hacktv.data.LauncherApp
 import io.github.diegopq.hacktv.data.RecommendationSet
@@ -36,6 +38,10 @@ class LauncherViewModel(application: Application) : AndroidViewModel(application
     private val _recommendations = MutableStateFlow(SampleContent.set())
     val recommendations: StateFlow<RecommendationSet> = _recommendations.asStateFlow()
     private var recommendationsJob: Job? = null
+
+    /** The user's order and hidden apps for My apps. */
+    private val _layout = MutableStateFlow(HomeLayoutStore.load(application))
+    val layout: StateFlow<HomeLayout> = _layout.asStateFlow()
 
     /** Whether the remote-button service is on, for the card on the Settings page. */
     private val _keyServiceOn = MutableStateFlow(false)
@@ -87,6 +93,19 @@ class LauncherViewModel(application: Application) : AndroidViewModel(application
                 ?.let { _recommendations.value = it }
             Tmdb.refresh(context, installed)?.let { _recommendations.value = it }
         }
+    }
+
+    /** Saves the order of My apps after the user moved an app. */
+    fun saveOrder(packages: List<String>) = updateLayout { it.copy(order = packages) }
+
+    fun setHidden(packageName: String, hidden: Boolean) = updateLayout {
+        it.copy(hidden = if (hidden) it.hidden + packageName else it.hidden - packageName)
+    }
+
+    private fun updateLayout(change: (HomeLayout) -> HomeLayout) {
+        val updated = change(_layout.value)
+        _layout.value = updated
+        HomeLayoutStore.save(getApplication(), updated)
     }
 
     fun refreshKeyService() {

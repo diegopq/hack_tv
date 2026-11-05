@@ -27,6 +27,7 @@ It started as a way to speed up and clean up a Hisense Android TV (Android 12, M
   - [URL parameters](#url-parameters)
 - [Build and install the launcher](#build-and-install-the-launcher)
   - [Remote buttons](#remote-buttons)
+  - [Move and hide apps](#move-and-hide-apps)
   - [Recommendations](#recommendations)
 - [Configuration](#configuration)
 - [Enable network debugging on your TV](#enable-network-debugging-on-your-tv)
@@ -42,7 +43,7 @@ It started as a way to speed up and clean up a Hisense Android TV (Android 12, M
 |---|---|
 | UI design (HTML mockup) | ✅ Done: [`diseno/maqueta.html`](diseno/maqueta.html) |
 | Revert script for the TV optimizations | ✅ Done: [`revert_tv.sh`](revert_tv.sh) |
-| Android launcher app | 🚧 v0.3 in [`launcher/`](launcher/): Home with the recommendations banner (TMDB, or sample data without a key), remote shortcut buttons, your apps, HDMI inputs and settings shortcuts, the All apps and Settings pages, English and Spanish |
+| Android launcher app | 🚧 v0.4 in [`launcher/`](launcher/): Home with the recommendations banner (TMDB, or sample data without a key), remote shortcut buttons, your apps (move and hide them), HDMI inputs and settings shortcuts, the All apps and Settings pages, English and Spanish |
 
 ## Planned features
 
@@ -132,6 +133,16 @@ adb shell pm grant io.github.diegopq.hacktv android.permission.WRITE_SECURE_SETT
 ```
 
 The **Remote buttons** card on the launcher's Settings page shows whether the service is on. Keys sent with `adb shell input keyevent` don't go through accessibility services, so test the buttons with the real remote.
+
+### Move and hide apps
+
+Hold OK on an app in **My apps** for its menu:
+
+- **Move**: the tile gets a blue outline and ← → carry it along the row. OK or Back puts it down. The order is saved on the TV.
+- **Hide from Home**: removes it from My apps. It stays on the **All apps** page, dimmed and marked *Hidden*; hold OK on it there and choose **Show on Home** to bring it back.
+- **App info**: Android's page for the app (storage, permissions, uninstall).
+
+Apps installed later go at the end of the row.
 
 ### Recommendations
 
