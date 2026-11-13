@@ -30,6 +30,7 @@ It started as a way to speed up and clean up a Hisense Android TV (Android 12, M
   - [Make it the home screen](#make-it-the-home-screen)
   - [Move and hide apps](#move-and-hide-apps)
   - [Recommendations](#recommendations)
+  - [Recently played](#recently-played)
 - [Configuration](#configuration)
 - [Enable network debugging on your TV](#enable-network-debugging-on-your-tv)
   - [Let an AI agent guide you](#let-an-ai-agent-guide-you)
@@ -44,13 +45,13 @@ It started as a way to speed up and clean up a Hisense Android TV (Android 12, M
 |---|---|
 | UI design (HTML mockup) | ✅ Done: [`diseno/maqueta.html`](diseno/maqueta.html) |
 | Revert script for the TV optimizations | ✅ Done: [`revert_tv.sh`](revert_tv.sh) |
-| Android launcher app | 🚧 v0.7 in [`launcher/`](launcher/): Home with the recommendations banner (TMDB; without a key it spotlights the focused app), remote shortcut buttons, your apps (move and hide them), HDMI inputs and settings shortcuts, the All apps and Settings pages, English and Spanish |
+| Android launcher app | 🚧 v0.8 in [`launcher/`](launcher/): Home with the recommendations banner (TMDB; without a key it spotlights the focused app), remote shortcut buttons, your apps (move and hide them), Recently played, HDMI inputs and settings shortcuts, the All apps and Settings pages, English and Spanish |
 
 ## Planned features
 
 - **Ad-free home screen** with your apps, HDMI inputs, and system shortcuts.
 - **Recommendations banner** with movies and series available on the streaming apps you have installed, from [TMDB](https://www.themoviedb.org/). It shows a random mix from those apps only.
-- **Recently played** row, built from the launcher's own local history of what your apps play (Android media sessions).
+- **Recently played** row: the Continue watching list your apps publish for the TV, plus the launcher's own local history of what your apps play (Android media sessions), without repeats.
 - **Remote button remapping** through an accessibility service, for example the Settings, App list, YouTube, Prime Video, and Disney+ buttons.
 - **Lightweight**: tuned for low-end TV hardware.
 
@@ -161,6 +162,22 @@ Apps installed later go at the end of the row.
 
 With `TMDB_API_KEY` set in `.env`, the banner shows popular movies and series from the last three years on the streaming apps installed on the TV, in the TV's language. Services are detected automatically: the launcher downloads TMDB's list of streaming services for your country and matches it against the names of your installed apps, so Mercado Play, Runtime, Pluto TV or MUBI show up on their own. A short built-in list covers apps whose name differs from TMDB's (Prime Video, HBO Max). Services with a small or classic catalog fall back to their popular titles of any year. Apps without a TMDB catalog (YouTube, Spotify) don't appear. Only services whose app is installed are used, and the banner shows a random mix of up to ten titles that takes turns between them, new each time you open Home. Results are cached for six hours. The country comes from the TV's time zone (America/Mexico_City means Mexico), because the language setting often names another country (`es-US` on a TV in Mexico). Set `TMDB_REGION` only to force a different country. **More info** opens the title in Google TV's search, which links to the app that has it. The key is built into the APK, so don't share your APK publicly.
 
+### Recently played
+
+The row under My apps combines two sources, newest first:
+
+- **Continue watching from your apps**: what apps such as YouTube or Prime Video publish for the TV, with the episode, the time left and a progress bar. OK opens it right where the app says. Not every app publishes it (Netflix often doesn't).
+- **Your own history**: what any app played for at least 45 seconds, as the TV's player controls report it (title, artwork and position). Trailers that start by themselves on an app's home screen don't count. OK opens the app. Anything already in Continue watching is left out, so a show never appears twice. It stays on the TV, in the launcher's private storage, up to 30 entries.
+
+Each source needs a one-time permission. Open **Settings** in hack_tv and press OK on the **Recently played** card: the first press asks for Continue watching on screen. Android TV has no screen for the history permission, so allow it once over adb:
+
+```bash
+adb shell pm grant io.github.diegopq.hacktv android.permission.READ_TV_LISTINGS      # Continue watching (same as the on-screen prompt)
+adb shell cmd notification allow_listener io.github.diegopq.hacktv/io.github.diegopq.hacktv.media.PlaybackListener   # your own history
+```
+
+The history permission is listed as notification access, but the launcher only follows the player controls and never reads notifications. With both allowed, OK on the card clears your own history.
+
 Release builds are signed with your local debug key, so they install over adb. Set up a real signing key before publishing an APK.
 
 ## Configuration
@@ -253,7 +270,7 @@ I want to speed up my Android TV and remove things I don't use. It's on my local
 
 5. Install the hack_tv launcher
    - Check https://github.com/diegopq/hack_tv/releases for an APK. If there isn't a release yet, stop here and tell me.
-   - If there is one, download it, install it with "adb install", set it as the home app, and walk me through the permissions it needs (accessibility service for the remote buttons, notification access for "Recently played", usage access) on the TV screen. Don't enter any passwords or accounts for me.
+   - If there is one, download it, install it with "adb install", set it as the home app, and walk me through the permissions it needs (accessibility service for the remote buttons, TV listings and notification access for "Recently played") on the TV screen. Don't enter any passwords or accounts for me.
    - Test the home screen and remote buttons with me, and add any new changes to the revert script.
 
 At the end, give me a summary: what you changed, how much free memory there is compared to before, and how to undo everything with the revert script.

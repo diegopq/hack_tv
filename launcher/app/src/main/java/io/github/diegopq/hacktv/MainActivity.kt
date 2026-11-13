@@ -40,6 +40,8 @@ class MainActivity : ComponentActivity() {
         viewModel.refreshInputs()
         // New recommendations every few hours; the cache makes this free the rest of the time.
         viewModel.refreshRecommendations()
+        // What was just played in another app, and whether the Recently played row has its access.
+        viewModel.refreshRecent()
         RemoteKeys.repairIfNeeded(this)
         viewModel.refreshKeyService()
     }

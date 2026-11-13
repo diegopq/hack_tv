@@ -65,6 +65,9 @@ import io.github.diegopq.hacktv.R
 import io.github.diegopq.hacktv.data.AppsRepository
 import io.github.diegopq.hacktv.data.Inputs
 import io.github.diegopq.hacktv.data.LauncherApp
+import io.github.diegopq.hacktv.data.RecentAccess
+import io.github.diegopq.hacktv.data.RecentItem
+import io.github.diegopq.hacktv.data.RecentlyPlayed
 import io.github.diegopq.hacktv.data.RecommendationSet
 import io.github.diegopq.hacktv.data.SystemShortcut
 import io.github.diegopq.hacktv.data.TvInputItem
@@ -110,6 +113,7 @@ fun HomeScreen(
     homeApps: List<LauncherApp>,
     allApps: List<LauncherApp>,
     inputs: List<TvInputItem>,
+    recent: List<RecentItem>,
     recommendations: RecommendationSet,
     listState: LazyListState,
     firstAppRequester: FocusRequester,
@@ -131,7 +135,7 @@ fun HomeScreen(
     }
 
     val density = LocalDensity.current
-    val columnSpec = remember(density) { with(density) { minimalScroll(6.dp.toPx(), 12.dp.toPx()) } }
+    val columnSpec = remember(density) { with(density) { minimalScroll(6.dp.toPx(), 22.dp.toPx()) } }
     val rowSpec = remember(density) { with(density) { minimalScroll(60.dp.toPx(), 60.dp.toPx()) } }
 
     // The banner and the first row of apps fit on screen together: focusing either brings the banner back.
@@ -176,13 +180,18 @@ fun HomeScreen(
     }
     BackHandler(enabled = movingPackage != null) { finishMove() }
 
+    // A focused Recently played card fills the screen behind Home with its artwork, as the banner does.
+    var focusedRecent by remember { mutableStateOf<RecentItem?>(null) }
+
     // Without recommendations the banner shows the focused app of My apps instead.
     var spotlightPackage by remember { mutableStateOf<String?>(null) }
     val spotlight = homeApps.firstOrNull { it.packageName == spotlightPackage } ?: homeApps.firstOrNull()
     val showRecommendations = rec != null
 
-    LaunchedEffect(rec?.imageUrl, spotlight?.packageName, showRecommendations) {
+    LaunchedEffect(rec?.imageUrl, spotlight?.packageName, showRecommendations, focusedRecent?.imageUri) {
+        val recentArt = focusedRecent?.imageUri
         when {
+            recentArt != null -> onBackdrop(BackdropContent.Image(recentArt))
             rec != null -> onBackdrop(BackdropContent.Image(rec.imageUrl))
             spotlight != null -> onBackdrop(BackdropContent.Glow(Color(spotlight.accent ?: 0xFF24384C.toInt())))
         }
@@ -292,6 +301,35 @@ fun HomeScreen(
             }
             Spacer(Modifier.height(22.dp))
         }
+        if (recent.isNotEmpty()) {
+            item(key = "recent") {
+                RowTitle(stringResource(R.string.row_recent), hint = stringResource(R.string.row_recent_hint))
+                WithScrollSpec(rowSpec) {
+                LazyRow(
+                    contentPadding = RowPadding,
+                    horizontalArrangement = Arrangement.spacedBy(15.dp),
+                    modifier = Modifier.focusRestorer().onFocusChanged { if (!it.hasFocus) focusedRecent = null },
+                ) {
+                    items(recent, key = { it.id }) { item ->
+                        val app = remember(item.packageName, allApps) { allApps.firstOrNull { it.packageName == item.packageName } }
+                        MediaTile(
+                            item = item,
+                            app = app,
+                            subtitle = recentSubtitle(item, app),
+                            onClick = {
+                                val intent = RecentlyPlayed.openIntent(context, item, app)
+                                if (intent != null) onOpen(intent)
+                                else Toast.makeText(context, context.getString(R.string.cannot_open, item.title), Toast.LENGTH_SHORT).show()
+                            },
+                            modifier = Modifier.size(200.dp, 112.dp),
+                            onFocused = { focusedRecent = item },
+                        )
+                    }
+                }
+                }
+                Spacer(Modifier.height(22.dp))
+            }
+        }
         if (inputs.isNotEmpty()) {
             item(key = "inputs") {
                 RowTitle(stringResource(R.string.row_inputs))
@@ -364,6 +402,18 @@ fun HomeScreen(
         runCatching { tileRequesters[target]?.requestFocus() }
         pendingFocus = null
     }
+}
+
+/** "S2 E5 · 24 min left", the episode title, or the app's name when the app says nothing else. */
+@Composable
+private fun recentSubtitle(item: RecentItem, app: LauncherApp?): String {
+    val episode = when {
+        item.season != null && item.episode != null -> stringResource(R.string.episode_label, item.season, item.episode)
+        item.episode != null -> stringResource(R.string.episode_only, item.episode)
+        else -> item.subtitle
+    }
+    val left = item.minutesLeft?.let { stringResource(R.string.minutes_left, it) }
+    return listOfNotNull(episode, left).joinToString(" · ").ifEmpty { app?.label.orEmpty() }
 }
 
 /** Every installed app in a grid, alphabetically. The remote's App list button opens this page. */
@@ -444,10 +494,12 @@ fun AppsScreen(
 @Composable
 fun SettingsScreen(
     keyServiceOn: Boolean,
+    recentAccess: RecentAccess,
     firstRequester: FocusRequester,
     onOpen: (Intent) -> Unit,
     onMessage: (Int) -> Unit,
     onToggleKeys: () -> Boolean?,
+    onRecent: () -> Unit,
 ) {
     val context = LocalContext.current
     Column(Modifier.fillMaxSize().padding(top = 93.dp)) {
@@ -476,6 +528,21 @@ fun SettingsScreen(
                         }
                     },
                     modifier = Modifier.fillMaxWidth().height(110.dp).focusRequester(firstRequester),
+                )
+            }
+            item(key = "recent") {
+                GlassTile(
+                    icon = R.drawable.ic_play,
+                    title = stringResource(R.string.sc_recent),
+                    subtitle = stringResource(
+                        when {
+                            recentAccess.complete -> R.string.sc_recent_on
+                            recentAccess.continueWatching -> R.string.sc_recent_partial
+                            else -> R.string.sc_recent_off
+                        },
+                    ),
+                    onClick = onRecent,
+                    modifier = Modifier.fillMaxWidth().height(110.dp),
                 )
             }
             itemsIndexed(SystemShortcut.entries) { _, shortcut ->

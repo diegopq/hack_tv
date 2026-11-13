@@ -5,6 +5,8 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.database.ContentObserver
+import android.media.tv.TvContract
 import android.media.tv.TvInputInfo
 import android.media.tv.TvInputManager
 import android.os.Handler
@@ -17,13 +19,21 @@ import io.github.diegopq.hacktv.data.HomeLayout
 import io.github.diegopq.hacktv.data.HomeLayoutStore
 import io.github.diegopq.hacktv.data.Inputs
 import io.github.diegopq.hacktv.data.LauncherApp
+import io.github.diegopq.hacktv.data.RecentAccess
+import io.github.diegopq.hacktv.data.RecentItem
+import io.github.diegopq.hacktv.data.RecentlyPlayed
 import io.github.diegopq.hacktv.data.RecommendationSet
 import io.github.diegopq.hacktv.data.Tmdb
 import io.github.diegopq.hacktv.data.TvInputItem
 import io.github.diegopq.hacktv.keys.RemoteKeys
+import io.github.diegopq.hacktv.media.PlayHistory
+import io.github.diegopq.hacktv.media.PlaybackListener
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -42,6 +52,13 @@ class LauncherViewModel(application: Application) : AndroidViewModel(application
     val recommendations: StateFlow<RecommendationSet> = _recommendations.asStateFlow()
     private var recommendationsJob: Job? = null
     private var recommendationsFor: Set<String> = emptySet()
+
+    /** Continue watching from the apps, plus the launcher's own history without anything already in it. */
+    private val _watchNext = MutableStateFlow<List<RecentItem>>(emptyList())
+    val recent: StateFlow<List<RecentItem>> = combine(_watchNext, PlayHistory.items, RecentlyPlayed::merge)
+        .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+    private val _recentAccess = MutableStateFlow(RecentAccess(continueWatching = false, history = false))
+    val recentAccess: StateFlow<RecentAccess> = _recentAccess.asStateFlow()
 
     /** The user's order and hidden apps for My apps. */
     private val _layout = MutableStateFlow(HomeLayoutStore.load(application))
@@ -68,10 +85,19 @@ class LauncherViewModel(application: Application) : AndroidViewModel(application
     }
     private val tvInputs: TvInputManager? = application.getSystemService(TvInputManager::class.java)
 
+    /** Apps update their Continue watching rows as the user watches; the row follows while Home is open. */
+    private val watchNextObserver = object : ContentObserver(Handler(Looper.getMainLooper())) {
+        override fun onChange(selfChange: Boolean) = refreshRecent()
+    }
+
     init {
         refreshApps()
         refreshInputs()
         runCatching { tvInputs?.registerCallback(inputCallback, Handler(Looper.getMainLooper())) }
+        runCatching {
+            application.contentResolver.registerContentObserver(TvContract.WatchNextPrograms.CONTENT_URI, true, watchNextObserver)
+        }
+        refreshRecent()
         val filter = IntentFilter().apply {
             addAction(Intent.ACTION_PACKAGE_ADDED)
             addAction(Intent.ACTION_PACKAGE_REMOVED)
@@ -119,6 +145,18 @@ class LauncherViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
+    fun refreshRecent() {
+        val context = getApplication<Application>()
+        _recentAccess.value = RecentAccess(
+            continueWatching = RecentlyPlayed.canReadWatchNext(context),
+            history = PlaybackListener.isAllowed(context),
+        )
+        PlayHistory.load(context)
+        viewModelScope.launch(Dispatchers.IO) { _watchNext.value = RecentlyPlayed.loadWatchNext(context) }
+    }
+
+    fun clearHistory() = PlayHistory.clear(getApplication())
+
     /** Saves the order of My apps after the user moved an app. */
     fun saveOrder(packages: List<String>) = updateLayout { it.copy(order = packages) }
 
@@ -153,6 +191,7 @@ class LauncherViewModel(application: Application) : AndroidViewModel(application
 
     override fun onCleared() {
         runCatching { tvInputs?.unregisterCallback(inputCallback) }
+        getApplication<Application>().contentResolver.unregisterContentObserver(watchNextObserver)
         getApplication<Application>().unregisterReceiver(packageReceiver)
     }
 }

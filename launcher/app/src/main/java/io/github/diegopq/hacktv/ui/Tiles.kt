@@ -3,12 +3,15 @@ package io.github.diegopq.hacktv.ui
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -17,6 +20,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -30,7 +37,10 @@ import androidx.tv.material3.ClickableSurfaceDefaults
 import androidx.tv.material3.Icon
 import androidx.tv.material3.Surface
 import androidx.tv.material3.Text
+import coil3.compose.AsyncImage
+import coil3.request.ImageRequest
 import io.github.diegopq.hacktv.data.LauncherApp
+import io.github.diegopq.hacktv.data.RecentItem
 import io.github.diegopq.hacktv.ui.theme.HackColors
 
 private val TileShape = RoundedCornerShape(10.dp)
@@ -138,6 +148,77 @@ fun RowTitle(text: String, modifier: Modifier = Modifier, hint: String? = null) 
         if (hint != null) {
             Spacer(Modifier.width(8.dp))
             Text(hint, fontSize = 10.sp, fontWeight = FontWeight.Medium, color = HackColors.Faint)
+        }
+    }
+}
+
+/**
+ * A Recently played card: the show's artwork with its title, episode and progress, and the app's banner
+ * in the corner. Without artwork, the app's banner fills the card instead.
+ */
+@Composable
+fun MediaTile(
+    item: RecentItem,
+    app: LauncherApp?,
+    subtitle: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    onFocused: () -> Unit = {},
+) {
+    val context = LocalContext.current
+    Surface(
+        onClick = onClick,
+        modifier = modifier.onFocusChanged { if (it.isFocused) onFocused() },
+        shape = ClickableSurfaceDefaults.shape(TileShape),
+        scale = ClickableSurfaceDefaults.scale(focusedScale = 1.1f),
+        border = ClickableSurfaceDefaults.border(focusedBorder = FocusBorder),
+        colors = ClickableSurfaceDefaults.colors(
+            containerColor = Color(0xFF16181D),
+            contentColor = HackColors.Text,
+            focusedContainerColor = Color(0xFF23262E),
+            focusedContentColor = HackColors.Text,
+        ),
+    ) {
+        Box(Modifier.fillMaxSize()) {
+            app?.banner?.let {
+                Image(it, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize().alpha(0.6f))
+            }
+            if (item.imageUri != null) {
+                // Drawn over the banner: if the artwork can't load, the banner stays.
+                AsyncImage(
+                    model = ImageRequest.Builder(context).data(item.imageUri).size(400, 225).build(),
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize(),
+                )
+            }
+            Box(
+                Modifier.fillMaxSize().background(
+                    Brush.verticalGradient(0f to Color.Transparent, 0.3f to Color(0x33000000), 0.55f to Color(0x59000000), 1f to Color(0xE0000000)),
+                ),
+            )
+            if (item.imageUri != null && app?.banner != null) {
+                Image(
+                    app.banner,
+                    contentDescription = app.label,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.align(Alignment.TopEnd).padding(7.dp).size(36.dp, 20.dp).clip(RoundedCornerShape(4.dp)),
+                )
+            }
+            Column(Modifier.align(Alignment.BottomStart).padding(start = 11.dp, end = 11.dp, bottom = 15.dp)) {
+                Text(item.title, fontSize = 12.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                if (subtitle.isNotEmpty()) {
+                    Text(subtitle, fontSize = 8.5.sp, color = HackColors.Muted, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                }
+            }
+            item.progress?.let { progress ->
+                Box(
+                    Modifier.align(Alignment.BottomStart).padding(start = 11.dp, end = 11.dp, bottom = 8.dp)
+                        .fillMaxWidth().height(2.5.dp).clip(RoundedCornerShape(2.dp)).background(Color(0x40FFFFFF)),
+                ) {
+                    Box(Modifier.fillMaxWidth(progress).fillMaxHeight().background(Color.White))
+                }
+            }
         }
     }
 }

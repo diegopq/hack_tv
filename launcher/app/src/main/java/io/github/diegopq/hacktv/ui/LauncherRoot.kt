@@ -4,6 +4,9 @@ import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import android.provider.Settings
 import androidx.annotation.StringRes
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.tween
@@ -42,6 +45,8 @@ import coil3.request.ImageRequest
 import io.github.diegopq.hacktv.LauncherViewModel
 import io.github.diegopq.hacktv.R
 import io.github.diegopq.hacktv.data.AppsRepository
+import io.github.diegopq.hacktv.data.RecentlyPlayed
+import io.github.diegopq.hacktv.media.PlaybackListener
 import io.github.diegopq.hacktv.ui.theme.HackColors
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -64,6 +69,8 @@ fun LauncherRoot(viewModel: LauncherViewModel, navigation: Flow<Tab>, initialTab
     val recommendations by viewModel.recommendations.collectAsStateWithLifecycle()
     val keyServiceOn by viewModel.keyServiceOn.collectAsStateWithLifecycle()
     val layout by viewModel.layout.collectAsStateWithLifecycle()
+    val recent by viewModel.recent.collectAsStateWithLifecycle()
+    val recentAccess by viewModel.recentAccess.collectAsStateWithLifecycle()
     val homeApps = remember(apps, layout) { AppsRepository.homeOrder(apps, layout) }
 
     var tab by rememberSaveable { mutableStateOf(initialTab) }
@@ -101,6 +108,29 @@ fun LauncherRoot(viewModel: LauncherViewModel, navigation: Flow<Tab>, initialTab
     }
     fun goHome() = goTo(Tab.HOME)
 
+    // Recently played asks for its two permissions one at a time from the Settings card.
+    val askListings = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        viewModel.refreshRecent()
+        if (!granted) message(R.string.listings_denied)
+    }
+    fun onRecentCard() {
+        when {
+            !recentAccess.continueWatching -> askListings.launch(RecentlyPlayed.LISTINGS_PERMISSION)
+            !recentAccess.history -> {
+                // Phones and some TVs have a page for it; most TVs only allow it over adb.
+                val detail = Intent(Settings.ACTION_NOTIFICATION_LISTENER_DETAIL_SETTINGS)
+                    .putExtra(Settings.EXTRA_NOTIFICATION_LISTENER_COMPONENT_NAME, PlaybackListener.component(context).flattenToString())
+                val list = Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
+                val page = listOf(detail, list).firstOrNull { it.resolveActivity(context.packageManager) != null }
+                if (page != null) open(page.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) else message(R.string.history_needs_adb)
+            }
+            else -> {
+                viewModel.clearHistory()
+                message(R.string.history_cleared)
+            }
+        }
+    }
+
     // First focus goes to the first item of the opening page, as on the stock launcher.
     LaunchedEffect(homeApps.isNotEmpty()) {
         if (homeApps.isNotEmpty() && !focusedOnce) {
@@ -126,6 +156,7 @@ fun LauncherRoot(viewModel: LauncherViewModel, navigation: Flow<Tab>, initialTab
                     homeApps = homeApps,
                     allApps = apps,
                     inputs = inputs,
+                    recent = recent,
                     recommendations = recommendations,
                     listState = listState,
                     firstAppRequester = firstApp,
@@ -144,10 +175,12 @@ fun LauncherRoot(viewModel: LauncherViewModel, navigation: Flow<Tab>, initialTab
                 )
                 Tab.SETTINGS -> SettingsScreen(
                     keyServiceOn = keyServiceOn,
+                    recentAccess = recentAccess,
                     firstRequester = firstSetting,
                     onOpen = ::open,
                     onMessage = ::message,
                     onToggleKeys = viewModel::toggleKeyService,
+                    onRecent = ::onRecentCard,
                 )
             }
             TopBar(

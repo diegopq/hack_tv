@@ -31,6 +31,12 @@
     <string name="row_my_apps">My apps</string>
     <string name="row_inputs">Inputs</string>
     <string name="row_system">System</string>
+    <string name="row_recent">Recently played</string>
+    <string name="row_recent_hint">From your apps</string>
+    <!-- Season and episode on a Recently played card, such as "S2 E5" -->
+    <string name="episode_label">S%1$s E%2$s</string>
+    <string name="episode_only">E%1$s</string>
+    <string name="minutes_left">%1$d min left</string>
 
     <!-- Apps and Settings pages -->
     <string name="all_apps">All apps</string>
@@ -67,6 +73,16 @@
     <string name="sc_keys_off">Off · OK to turn on</string>
     <string name="keys_turned_on">Remote buttons turned on</string>
     <string name="keys_turned_off">Remote buttons turned off. Turn them on here again whenever you like.</string>
+
+    <!-- Recently played -->
+    <string name="history_service_label">hack_tv recently played</string>
+    <string name="sc_recent">Recently played</string>
+    <string name="sc_recent_on">On · OK to clear your history</string>
+    <string name="sc_recent_partial">Apps only · OK to allow your history</string>
+    <string name="sc_recent_off">Off · OK to allow</string>
+    <string name="history_cleared">Your history was cleared. Continue watching from your apps stays.</string>
+    <string name="history_needs_adb">Your own history needs a one-time permission from a computer with adb. The README explains how.</string>
+    <string name="listings_denied">Continue watching wasn\'t allowed. You can allow it in the app\'s permissions or with adb (see the README).</string>
     <!-- Messages -->
     <string name="no_search">Search isn\'t available on this TV</string>
     <string name="coming_soon">Coming soon</string>

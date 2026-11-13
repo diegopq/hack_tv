@@ -30,6 +30,7 @@ Empezó como una forma de acelerar y limpiar una TV Hisense con Android TV (Andr
   - [Hacerlo la pantalla de inicio](#hacerlo-la-pantalla-de-inicio)
   - [Mover y ocultar apps](#mover-y-ocultar-apps)
   - [Recomendaciones](#recomendaciones)
+  - [Reproducido recientemente](#reproducido-recientemente)
 - [Configuración](#configuración)
 - [Activar la depuración por red en tu TV](#activar-la-depuración-por-red-en-tu-tv)
   - [Deja que un agente de IA te guíe](#deja-que-un-agente-de-ia-te-guíe)
@@ -44,13 +45,13 @@ Empezó como una forma de acelerar y limpiar una TV Hisense con Android TV (Andr
 |---|---|
 | Diseño de la interfaz (maqueta HTML) | ✅ Listo: [`diseno/maqueta.html`](diseno/maqueta.html) |
 | Script para revertir las optimizaciones de la TV | ✅ Listo: [`revert_tv.sh`](revert_tv.sh) |
-| App launcher para Android | 🚧 v0.7 en [`launcher/`](launcher/): Inicio con el banner de recomendaciones (TMDB; sin clave muestra la app enfocada), botones de acceso directo del control, tus apps (muévelas y ocúltalas), entradas HDMI y accesos a ajustes, las páginas Todas las apps y Ajustes, en español e inglés |
+| App launcher para Android | 🚧 v0.8 en [`launcher/`](launcher/): Inicio con el banner de recomendaciones (TMDB; sin clave muestra la app enfocada), botones de acceso directo del control, tus apps (muévelas y ocúltalas), Reproducido recientemente, entradas HDMI y accesos a ajustes, las páginas Todas las apps y Ajustes, en español e inglés |
 
 ## Funciones planeadas
 
 - **Pantalla de inicio sin anuncios** con tus apps, las entradas HDMI y accesos directos del sistema.
 - **Banner de recomendaciones** con películas y series disponibles en las apps de streaming que tienes instaladas, desde [TMDB](https://www.themoviedb.org/). Muestra una mezcla aleatoria solo de esas apps.
-- **Fila de reproducido recientemente**, armada con el historial local propio del launcher a partir de lo que reproducen tus apps (sesiones multimedia de Android).
+- **Fila de reproducido recientemente**: la lista Continuar viendo que tus apps publican para la TV, más el historial local propio del launcher con lo que reproducen tus apps (sesiones multimedia de Android), sin repetidos.
 - **Remapeo de botones del control** mediante un servicio de accesibilidad, por ejemplo los botones de Ajustes, Lista de apps, YouTube, Prime Video y Disney+.
 - **Ligero**: optimizado para TVs con hardware modesto.
 
@@ -161,6 +162,22 @@ Las apps que instales después se agregan al final de la fila.
 
 Con `TMDB_API_KEY` en el `.env`, el banner muestra películas y series populares de los últimos tres años en las apps de streaming instaladas en la TV, en el idioma de la TV. Los servicios se detectan solos: el launcher descarga de TMDB la lista de servicios de streaming de tu país y la compara con los nombres de tus apps instaladas, así que Mercado Play, Runtime, Pluto TV o MUBI aparecen sin configurar nada. Una lista corta integrada cubre las apps cuyo nombre no coincide con el de TMDB (Prime Video, HBO Max). Los servicios con catálogo pequeño o clásico usan sus títulos populares de cualquier año. Las apps sin catálogo en TMDB (YouTube, Spotify) no aparecen. Solo se usan los servicios cuya app está instalada, y el banner muestra una mezcla aleatoria de hasta diez títulos que se turna entre ellos, distinta cada vez que abres Inicio. Los resultados se guardan en caché seis horas. El país se toma de la zona horaria de la TV (America/Mexico_City es México), porque el idioma a veces indica otro país (`es-US` en una TV en México). Configura `TMDB_REGION` solo para forzar otro país. **Más info** abre el título en la búsqueda de Google TV, que enlaza a la app que lo tiene. La clave queda dentro del APK, así que no compartas tu APK públicamente.
 
+### Reproducido recientemente
+
+La fila debajo de Mis apps junta dos fuentes, de lo más reciente a lo más antiguo:
+
+- **Continuar viendo de tus apps**: lo que apps como YouTube o Prime Video publican para la TV, con el episodio, el tiempo restante y una barra de progreso. OK lo abre justo donde la app indica. No todas las apps lo publican (Netflix muchas veces no).
+- **Tu historial propio**: lo que cualquier app reprodujo durante al menos 45 segundos, según los controles de reproducción de la TV (título, imagen y posición). Los avances que se reproducen solos en la pantalla principal de una app no cuentan. OK abre la app. Lo que ya está en Continuar viendo se omite, así que nada aparece dos veces. Se queda en la TV, en el almacenamiento privado del launcher, hasta 30 entradas.
+
+Cada fuente necesita un permiso de una sola vez. Abre **Ajustes** en hack_tv y presiona OK en la tarjeta **Reproducido recientemente**: la primera vez pide en pantalla el permiso de Continuar viendo. Android TV no tiene pantalla para el permiso del historial, así que permítelo una vez por adb:
+
+```bash
+adb shell pm grant io.github.diegopq.hacktv android.permission.READ_TV_LISTINGS      # Continuar viendo (igual que el aviso en pantalla)
+adb shell cmd notification allow_listener io.github.diegopq.hacktv/io.github.diegopq.hacktv.media.PlaybackListener   # tu historial propio
+```
+
+El permiso del historial aparece como acceso a notificaciones, pero el launcher solo sigue los controles de reproducción y nunca lee las notificaciones. Con ambos permitidos, OK en la tarjeta borra tu historial propio.
+
 Las versiones release se firman con tu clave local de depuración para poder instalarlas por adb. Configura una clave de firma real antes de publicar un APK.
 
 ## Configuración
@@ -253,7 +270,7 @@ Quiero acelerar mi Android TV y quitar lo que no uso. Está en mi red local con 
 
 5. Instala el launcher hack_tv
    - Revisa https://github.com/diegopq/hack_tv/releases para ver si hay un APK. Si todavía no hay una versión publicada, detente aquí y dímelo.
-   - Si la hay, descárgala, instálala con "adb install", configúrala como app de inicio y guíame en la pantalla de la TV para dar los permisos que necesita (servicio de accesibilidad para los botones del control, acceso a notificaciones para "Reproducido recientemente", acceso a datos de uso). No escribas contraseñas ni cuentas por mí.
+   - Si la hay, descárgala, instálala con "adb install", configúrala como app de inicio y guíame en la pantalla de la TV para dar los permisos que necesita (servicio de accesibilidad para los botones del control, guía de TV y acceso a notificaciones para "Reproducido recientemente"). No escribas contraseñas ni cuentas por mí.
    - Prueba conmigo la pantalla de inicio y los botones del control, y agrega cualquier cambio nuevo al script para revertir.
 
 Al final, dame un resumen: qué cambiaste, cuánta memoria libre hay comparado con antes y cómo deshacer todo con el script para revertir.
