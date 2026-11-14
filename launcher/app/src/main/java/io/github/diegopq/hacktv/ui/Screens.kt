@@ -182,6 +182,20 @@ fun HomeScreen(
 
     // A focused Recently played card fills the screen behind Home with its artwork, as the banner does.
     var focusedRecent by remember { mutableStateOf<RecentItem?>(null) }
+    val recentRowState = rememberLazyListState()
+    // When the row changes order, a lazy row keeps showing the same first card, so a card that just moved to
+    // the front (the one you came back from, usually) stayed off screen to the left. After each update the
+    // row shows the focused card again, or goes back to the start when the focus is elsewhere.
+    LaunchedEffect(recent) {
+        delay(50)   // let the row lay out the new order first
+        val focusedIndex = focusedRecent?.let { focused -> recent.indexOfFirst { it.id == focused.id } } ?: -1
+        val target = focusedIndex.coerceAtLeast(0)
+        val info = recentRowState.layoutInfo
+        val shown = info.visibleItemsInfo.firstOrNull { it.index == target }
+        val fullyVisible = shown != null && shown.offset >= 0 &&
+            shown.offset + shown.size <= info.viewportEndOffset - info.afterContentPadding
+        if (!fullyVisible) recentRowState.animateScrollToItem(target)
+    }
 
     // Without recommendations the banner shows the focused app of My apps instead.
     var spotlightPackage by remember { mutableStateOf<String?>(null) }
@@ -306,6 +320,7 @@ fun HomeScreen(
                 RowTitle(stringResource(R.string.row_recent), hint = stringResource(R.string.row_recent_hint))
                 WithScrollSpec(rowSpec) {
                 LazyRow(
+                    state = recentRowState,
                     contentPadding = RowPadding,
                     horizontalArrangement = Arrangement.spacedBy(15.dp),
                     modifier = Modifier.focusRestorer().onFocusChanged { if (!it.hasFocus) focusedRecent = null },
