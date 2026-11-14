@@ -206,11 +206,24 @@ object Tmdb {
 
     private fun genreNames(type: String, language: String): Map<Int, String> {
         val genres = get("/genre/$type/list", mapOf("language" to language)).optJSONArray("genres") ?: return emptyMap()
-        return (0 until genres.length()).associate { i ->
+        val names = (0 until genres.length()).associate { i ->
             val g = genres.getJSONObject(i)
             g.getInt("id") to g.getString("name")
         }
+        return if (language.startsWith("es")) names + SPANISH_TV_GENRES.filterKeys { it in names } else names
     }
+
+    /** TMDB leaves these series genres in English in both Spanish variants ("Sci-Fi & Fantasy"). */
+    private val SPANISH_TV_GENRES = mapOf(
+        10759 to "Acción y aventura",
+        10762 to "Infantil",
+        10763 to "Noticias",
+        10764 to "Reality",
+        10765 to "Ciencia ficción y fantasía",
+        10766 to "Telenovela",
+        10767 to "Entrevistas",
+        10768 to "Bélica y política",
+    )
 
     private fun get(path: String, params: Map<String, String>): JSONObject {
         val query = (params + ("api_key" to BuildConfig.TMDB_API_KEY)).entries
@@ -231,9 +244,19 @@ object Tmdb {
     private fun interleave(a: List<Recommendation>, b: List<Recommendation>): List<Recommendation> =
         (0 until maxOf(a.size, b.size)).flatMap { listOfNotNull(a.getOrNull(it), b.getOrNull(it)) }
 
+    /**
+     * The TV's language, in the variant spoken in its country ([region]). The language setting often names
+     * another country: a TV in Mexico set to es-US got Spain's titles ("Deadpool y Lobezno"), because TMDB
+     * has no es-US and falls back to Spain. TMDB keeps Latin American Spanish under es-MX, so Spanish
+     * outside Spain uses that; other languages take the country directly (pt-BR, fr-CA, en-GB).
+     */
     private fun languageTag(): String {
-        val locale = Locale.getDefault()
-        return if (locale.country.isNotBlank()) "${locale.language}-${locale.country}" else locale.language
+        val language = Locale.getDefault().language.ifBlank { "es" }
+        val region = region()
+        return when (language) {
+            "es" -> if (region == "ES") "es-ES" else "es-MX"
+            else -> "$language-$region"
+        }
     }
 
     /**
@@ -250,7 +273,7 @@ object Tmdb {
 
     /** The cache is only valid for the same language, country and installed apps. */
     private fun queryKey(apps: List<LauncherApp>): String =
-        "v5|${languageTag()}|${region()}|" + apps.map { it.packageName }.sorted().joinToString(",").hashCode()
+        "v6|${languageTag()}|${region()}|" + apps.map { it.packageName }.sorted().joinToString(",").hashCode()
 
     private fun cacheFile(context: Context) = File(context.cacheDir, "tmdb-recommendations.json")
 
