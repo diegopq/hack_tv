@@ -46,7 +46,9 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.focus.onFocusChanged
@@ -72,6 +74,8 @@ import io.github.diegopq.hacktv.data.RecommendationSet
 import io.github.diegopq.hacktv.data.SystemShortcut
 import io.github.diegopq.hacktv.data.TvInputItem
 import io.github.diegopq.hacktv.ui.theme.HackColors
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -98,6 +102,24 @@ private fun minimalScroll(startInset: Float, endInset: Float) = object : BringIn
         }
     }
 }
+
+/**
+ * Moving Up or Down into a row always lands on its first item, not on the one focused last time, and a row
+ * goes back to its start once the focus leaves it, so that first item is on screen when you come back.
+ * [keepScroll] skips the reset while the row only lost focus to a dialog of its own.
+ */
+private fun Modifier.entersAtFirst(
+    first: FocusRequester,
+    state: LazyListState,
+    scope: CoroutineScope,
+    keepScroll: () -> Boolean = { false },
+): Modifier = focusProperties {
+    onEnter = {
+        if (requestedFocusDirection == FocusDirection.Up || requestedFocusDirection == FocusDirection.Down) {
+            runCatching { first.requestFocus() }
+        }
+    }
+}.onFocusChanged { if (!it.hasFocus && !keepScroll()) scope.launch { state.scrollToItem(0) } }
 
 /** Gives a list [spec] while its items get the minimal horizontal scroll back for their own rows. */
 @OptIn(ExperimentalFoundationApi::class)
@@ -140,9 +162,17 @@ fun HomeScreen(
 
     // The banner and the first row of apps fit on screen together: focusing either brings the banner back.
     val scope = rememberCoroutineScope()
+    // It waits a moment so it runs after the scroll that brings the focused item into view: when a row sends
+    // the focus to its first item, both start together and the shorter one used to win, leaving the banner
+    // scrolled away and invisible.
+    var bannerJob by remember { mutableStateOf<Job?>(null) }
     fun showBanner() {
-        if (listState.firstVisibleItemIndex != 0 || listState.firstVisibleItemScrollOffset != 0) {
-            scope.launch { listState.animateScrollToItem(0) }
+        bannerJob?.cancel()
+        bannerJob = scope.launch {
+            delay(80)
+            if (listState.firstVisibleItemIndex != 0 || listState.firstVisibleItemScrollOffset != 0) {
+                listState.animateScrollToItem(0)
+            }
         }
     }
     val fadeDistance = with(density) { 120.dp.toPx() }
@@ -183,6 +213,11 @@ fun HomeScreen(
     // A focused Recently played card fills the screen behind Home with its artwork, as the banner does.
     var focusedRecent by remember { mutableStateOf<RecentItem?>(null) }
     val recentRowState = rememberLazyListState()
+    val inputsRowState = rememberLazyListState()
+    val systemRowState = rememberLazyListState()
+    val firstRecent = remember { FocusRequester() }
+    val firstInput = remember { FocusRequester() }
+    val firstSystem = remember { FocusRequester() }
     // When the row changes order, a lazy row keeps showing the same first card, so a card that just moved to
     // the front (the one you came back from, usually) stayed off screen to the left. After each update the
     // row shows the focused card again, or goes back to the start when the focus is elsewhere.
@@ -278,7 +313,7 @@ fun HomeScreen(
                 state = appsRowState,
                 contentPadding = RowPadding,
                 horizontalArrangement = Arrangement.spacedBy(15.dp),
-                modifier = Modifier.focusRestorer(),
+                modifier = Modifier.entersAtFirst(firstAppRequester, appsRowState, scope, keepScroll = { menuApp != null }),
             ) {
                 itemsIndexed(rowApps, key = { _, app -> app.packageName }) { i, app ->
                     val moving = movingPackage == app.packageName
@@ -323,9 +358,11 @@ fun HomeScreen(
                     state = recentRowState,
                     contentPadding = RowPadding,
                     horizontalArrangement = Arrangement.spacedBy(15.dp),
-                    modifier = Modifier.focusRestorer().onFocusChanged { if (!it.hasFocus) focusedRecent = null },
+                    modifier = Modifier
+                        .entersAtFirst(firstRecent, recentRowState, scope)
+                        .onFocusChanged { if (!it.hasFocus) focusedRecent = null },
                 ) {
-                    items(recent, key = { it.id }) { item ->
+                    itemsIndexed(recent, key = { _, item -> item.id }) { i, item ->
                         val app = remember(item.packageName, allApps) { allApps.firstOrNull { it.packageName == item.packageName } }
                         MediaTile(
                             item = item,
@@ -336,7 +373,8 @@ fun HomeScreen(
                                 if (intent != null) onOpen(intent)
                                 else Toast.makeText(context, context.getString(R.string.cannot_open, item.title), Toast.LENGTH_SHORT).show()
                             },
-                            modifier = Modifier.size(200.dp, 112.dp),
+                            modifier = Modifier.size(200.dp, 112.dp)
+                                .then(if (i == 0) Modifier.focusRequester(firstRecent) else Modifier),
                             onFocused = { focusedRecent = item },
                         )
                     }
@@ -350,17 +388,18 @@ fun HomeScreen(
                 RowTitle(stringResource(R.string.row_inputs))
                 WithScrollSpec(rowSpec) {
                 LazyRow(
+                    state = inputsRowState,
                     contentPadding = RowPadding,
                     horizontalArrangement = Arrangement.spacedBy(15.dp),
-                    modifier = Modifier.focusRestorer(),
+                    modifier = Modifier.entersAtFirst(firstInput, inputsRowState, scope),
                 ) {
-                    items(inputs, key = { it.id }) { input ->
+                    itemsIndexed(inputs, key = { _, input -> input.id }) { i, input ->
                         GlassTile(
                             icon = R.drawable.ic_hdmi,
                             title = input.label,
                             subtitle = stringResource(R.string.input_sub),
                             onClick = { onOpen(Inputs.switchIntent(input)) },
-                            modifier = TileSize,
+                            modifier = TileSize.then(if (i == 0) Modifier.focusRequester(firstInput) else Modifier),
                         )
                     }
                 }
@@ -372,17 +411,18 @@ fun HomeScreen(
             RowTitle(stringResource(R.string.row_system))
             WithScrollSpec(rowSpec) {
             LazyRow(
+                state = systemRowState,
                 contentPadding = RowPadding,
                 horizontalArrangement = Arrangement.spacedBy(15.dp),
-                modifier = Modifier.focusRestorer(),
+                modifier = Modifier.entersAtFirst(firstSystem, systemRowState, scope),
             ) {
-                items(SystemShortcut.HOME_ROW) { shortcut ->
+                itemsIndexed(SystemShortcut.HOME_ROW) { i, shortcut ->
                     GlassTile(
                         icon = shortcut.icon,
                         title = stringResource(shortcut.title),
                         subtitle = stringResource(shortcut.subtitle),
                         onClick = { onOpen(shortcut.intent(context)) },
-                        modifier = TileSize,
+                        modifier = TileSize.then(if (i == 0) Modifier.focusRequester(firstSystem) else Modifier),
                     )
                 }
             }
