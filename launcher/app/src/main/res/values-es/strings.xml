@@ -35,7 +35,7 @@
     <string name="date_day_month">d \'de\' MMMM</string>
     <string name="new_episode">Nuevo episodio · T%1$d E%2$d</string>
     <string name="row_featured">Destacado en tus apps</string>
-    <string name="featured_hint">Lo que promociona cada app</string>
+    <string name="featured_hint">Una selección de tus apps</string>
     <string name="recent_hint">Desde tus apps · Mantén OK para quitar</string>
     <string name="episode_label">T%1$s E%2$s</string>
     <string name="episode_only">E%1$s</string>
