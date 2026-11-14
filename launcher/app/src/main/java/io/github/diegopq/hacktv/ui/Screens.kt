@@ -15,6 +15,7 @@ import android.net.Uri
 import android.provider.Settings
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.gestures.BringIntoViewSpec
+import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.gestures.LocalBringIntoViewSpec
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -44,6 +45,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
@@ -195,13 +197,26 @@ fun HomeScreen(
         val to = from + step
         if (from < 0 || to !in movingOrder.indices) return
         movingOrder = movingOrder.toMutableList().apply { add(to, removeAt(from)) }
-        scope.launch {
-            val visible = appsRowState.layoutInfo.visibleItemsInfo
-            val first = visible.firstOrNull()?.index ?: 0
-            val last = visible.lastOrNull()?.index ?: 0
-            if (to <= first) appsRowState.animateScrollToItem((to - 1).coerceAtLeast(0))
-            else if (to >= last) appsRowState.animateScrollToItem((to - (last - first) + 1).coerceAtLeast(0))
+    }
+    // The app being moved keeps the focus, so nothing scrolls the row for it: after each step, once the row
+    // has laid out the new order, it scrolls just enough to show the whole app inside the row's margins.
+    LaunchedEffect(movingOrder, movingPackage) {
+        val pkg = movingPackage ?: return@LaunchedEffect
+        withFrameNanos { }
+        val info = appsRowState.layoutInfo
+        val item = info.visibleItemsInfo.firstOrNull { it.key == pkg }
+        if (item == null) {
+            val index = movingOrder.indexOfFirst { it.packageName == pkg }
+            if (index >= 0) appsRowState.animateScrollToItem(index)
+            return@LaunchedEffect
         }
+        val end = info.viewportEndOffset - info.afterContentPadding
+        val delta = when {
+            item.offset < 0 -> item.offset.toFloat()
+            item.offset + item.size > end -> (item.offset + item.size - end).toFloat()
+            else -> 0f
+        }
+        if (delta != 0f) appsRowState.animateScrollBy(delta)
     }
     fun finishMove() {
         onSaveOrder(movingOrder.map { it.packageName })
