@@ -25,7 +25,12 @@ data class RecentItem(
     /** Where the app wants a click to go (Continue watching only); otherwise the app opens. */
     val intentUri: String? = null,
     val fromApp: Boolean,
+    /** Continue watching's kind (continue, next episode, new); -1 for the launcher's own history. */
+    val watchNextType: Int = -1,
 ) {
+    /** The app says a new season or episode of something the user watches is out. */
+    val isNewFromApp: Boolean get() = watchNextType == WatchNextPrograms.WATCH_NEXT_TYPE_NEW
+
     /** How far along it is, from 0 to 1, or null when the app doesn't say. */
     val progress: Float?
         get() = if (durationMs > 0 && positionMs > 0) (positionMs.toFloat() / durationMs).coerceIn(0f, 1f) else null
@@ -93,6 +98,7 @@ object RecentlyPlayed {
                         lastPlayed = long(11),
                         intentUri = str(12),
                         fromApp = true,
+                        watchNextType = c.getInt(6),
                     )
                 }
             }
@@ -143,6 +149,12 @@ object RecentlyPlayed {
             .replace(Regex("\\p{M}+"), "")
             .replace(Regex("[^\\p{L}\\p{N}]+"), " ")
             .trim()
+
+    /** An app's own link to a title (an intent: or web URI), when something on the TV can open it. */
+    fun linkIntent(context: Context, uri: String?): Intent? =
+        uri?.let { runCatching { Intent.parseUri(it, Intent.URI_INTENT_SCHEME) }.getOrNull() }
+            ?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            ?.takeIf { it.resolveActivity(context.packageManager) != null }
 
     /** What a click opens: the app's own link for Continue watching rows, otherwise the app itself. */
     fun openIntent(context: Context, item: RecentItem, app: LauncherApp?): Intent? {

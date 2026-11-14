@@ -32,6 +32,7 @@ Empezó como una forma de acelerar y limpiar una TV Hisense con Android TV (Andr
   - [Recomendaciones](#recomendaciones)
   - [Reproducido recientemente](#reproducido-recientemente)
   - [Nuevo en tus apps](#nuevo-en-tus-apps)
+  - [Destacado en tus apps](#destacado-en-tus-apps)
 - [Configuración](#configuración)
 - [Activar la depuración por red en tu TV](#activar-la-depuración-por-red-en-tu-tv)
   - [Deja que un agente de IA te guíe](#deja-que-un-agente-de-ia-te-guíe)
@@ -46,7 +47,7 @@ Empezó como una forma de acelerar y limpiar una TV Hisense con Android TV (Andr
 |---|---|
 | Diseño de la interfaz (maqueta HTML) | ✅ Listo: [`diseno/maqueta.html`](diseno/maqueta.html) |
 | Script para revertir las optimizaciones de la TV | ✅ Listo: [`revert_tv.sh`](revert_tv.sh) |
-| App launcher para Android | 🚧 v0.11 en [`launcher/`](launcher/): Inicio con el banner de recomendaciones (TMDB; sin clave muestra la app enfocada), botones de acceso directo del control, tus apps (muévelas y ocúltalas), Reproducido recientemente, entradas HDMI y accesos a ajustes, las páginas Todas las apps y Ajustes, en español e inglés |
+| App launcher para Android | 🚧 v0.12 en [`launcher/`](launcher/): Inicio con el banner de recomendaciones (TMDB; sin clave muestra la app enfocada), botones de acceso directo del control, tus apps (muévelas y ocúltalas), Reproducido recientemente, entradas HDMI y accesos a ajustes, las páginas Todas las apps y Ajustes, en español e inglés |
 
 ## Funciones planeadas
 
@@ -183,7 +184,11 @@ El permiso del historial aparece como acceso a notificaciones, pero el launcher 
 
 ### Nuevo en tus apps
 
-Esta fila muestra las nuevas temporadas de las series que ves. El launcher recuerda cada serie que aparece en Continuar viendo (con la temporada a la que llegaste, aunque la app quite la fila), la busca en TMDB por su nombre exacto y revisa sus temporadas dos veces al día. Aparece una tarjeta para una temporada posterior que se estrenó en el último año (**Nueva temporada · T3**) o que se estrena en los próximos tres meses (**T2 llega el 1 de diciembre**). OK abre la app donde la viste; mantén OK para quitar una tarjeta. Necesita `TMDB_API_KEY`; sin ella la fila no aparece.
+Esta fila muestra las nuevas temporadas de las series que ves. Primero van las que anuncian las propias apps: Prime Video y Apple TV marcan como "nuevo" en Continuar viendo una temporada nueva de algo que ves, y OK la abre ahí mismo. Después el launcher agrega lo que encuentra en TMDB: recuerda cada serie que aparece en Continuar viendo (con la temporada a la que llegaste, aunque la app quite la fila), la busca en TMDB por su nombre exacto y revisa sus temporadas dos veces al día. Aparece una tarjeta para una temporada posterior que se estrenó en el último año (**Nueva temporada · T3**) o que se estrena en los próximos tres meses (**T2 llega el 1 de diciembre**). OK abre la app donde la viste; mantén OK para quitar una tarjeta. La parte de TMDB necesita `TMDB_API_KEY`.
+
+### Destacado en tus apps
+
+Cada app sigue publicando filas de títulos para la pantalla de inicio de la TV ("canales de vista previa") aunque Google TV ya no las muestre: Netflix, Prime Video, Disney+, Apple TV, Mercado Play, Runtime y otras. Esta fila muestra unos cuantos de cada app por turnos, en el orden de Mis apps, sin repetir lo que ya está en las filas de arriba. OK abre el título directo en su app. El banner también usa estos enlaces: cuando la app destaca el título recomendado, **Ver en …** abre el título en vez del inicio de la app. No necesitan clave de TMDB, solo el permiso de Continuar viendo.
 
 Las versiones release se firman con tu clave local de depuración para poder instalarlas por adb. Configura una clave de firma real antes de publicar un APK.
 

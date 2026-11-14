@@ -27,6 +27,12 @@ data class NewSeason(
     val imageUrl: String?,
     /** The app the user watched the series in, opened by OK. */
     val packageName: String,
+    /** Set when the app itself announced it in Continue watching: OK opens the new episode right away. */
+    val intentUri: String? = null,
+    /** The new episode, when the app announced one past the first of a season. */
+    val episode: Int? = null,
+    /** When the app announced it, to order the app's own announcements. */
+    val announcedAt: Long = 0,
 )
 
 /**
@@ -93,7 +99,12 @@ object NewSeasons {
         val shows = loadShows(context).associateBy { it.key }.toMutableMap()
         var changed = false
         for (item in watchNext) {
-            val season = item.season?.trim()?.toIntOrNull() ?: continue   // movies have no season
+            val shown = item.season?.trim()?.toIntOrNull() ?: continue   // movies have no season
+            // The first episode of a season announced as next or new hasn't been watched yet: the season
+            // reached is the one before.
+            val firstOfSeason = item.episode?.trim()?.toIntOrNull() == 1 &&
+                (item.watchNextType == android.media.tv.TvContract.WatchNextPrograms.WATCH_NEXT_TYPE_NEXT || item.isNewFromApp)
+            val season = if (firstOfSeason) (shown - 1).coerceAtLeast(1) else shown
             val incoming = Show(item.title, item.packageName, season, item.lastPlayed)
             val known = shows[incoming.key]
             when {

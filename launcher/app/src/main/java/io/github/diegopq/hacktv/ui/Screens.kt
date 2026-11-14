@@ -69,6 +69,8 @@ import io.github.diegopq.hacktv.R
 import io.github.diegopq.hacktv.data.AppsRepository
 import io.github.diegopq.hacktv.data.Inputs
 import io.github.diegopq.hacktv.data.LauncherApp
+import io.github.diegopq.hacktv.data.AppFeatured
+import io.github.diegopq.hacktv.data.FeaturedItem
 import io.github.diegopq.hacktv.data.NewSeason
 import io.github.diegopq.hacktv.data.RecentItem
 import io.github.diegopq.hacktv.data.RecentlyPlayed
@@ -139,6 +141,8 @@ fun HomeScreen(
     inputs: List<TvInputItem>,
     recent: List<RecentItem>,
     newSeasons: List<NewSeason>,
+    featured: List<FeaturedItem>,
+    featuredRow: List<FeaturedItem>,
     recommendations: RecommendationSet,
     listState: LazyListState,
     firstAppRequester: FocusRequester,
@@ -232,6 +236,9 @@ fun HomeScreen(
     var focusedRecent by remember { mutableStateOf<RecentItem?>(null) }
     // "New in your apps" works the same way: artwork behind Home, hold OK to remove a card.
     var focusedNew by remember { mutableStateOf<NewSeason?>(null) }
+    var focusedFeatured by remember { mutableStateOf<FeaturedItem?>(null) }
+    val featuredRowState = rememberLazyListState()
+    val firstFeatured = remember { FocusRequester() }
     var menuNew by remember { mutableStateOf<NewSeason?>(null) }
     var pendingNewFocus by remember { mutableStateOf<String?>(null) }
     val newRequesters = remember { mutableMapOf<String, FocusRequester>() }
@@ -275,8 +282,8 @@ fun HomeScreen(
     val spotlight = homeApps.firstOrNull { it.packageName == spotlightPackage } ?: homeApps.firstOrNull()
     val showRecommendations = rec != null
 
-    LaunchedEffect(rec?.imageUrl, spotlight?.packageName, showRecommendations, focusedRecent?.imageUri, focusedNew?.imageUrl) {
-        val recentArt = focusedRecent?.imageUri ?: focusedNew?.imageUrl
+    LaunchedEffect(rec?.imageUrl, spotlight?.packageName, showRecommendations, focusedRecent?.imageUri, focusedNew?.imageUrl, focusedFeatured?.imageUri) {
+        val recentArt = focusedRecent?.imageUri ?: focusedNew?.imageUrl ?: focusedFeatured?.imageUri
         when {
             recentArt != null -> onBackdrop(BackdropContent.Image(recentArt))
             rec != null -> onBackdrop(BackdropContent.Image(rec.imageUrl))
@@ -321,8 +328,10 @@ fun HomeScreen(
                 providerApp = providerApp,
                 onWatch = {
                     val pkg = rec.providerPackage
+                    // When the app features this title itself, its own link opens it directly.
+                    val direct = RecentlyPlayed.linkIntent(context, AppFeatured.linkFor(featured, pkg, rec.title))
                     onOpen(
-                        providerApp?.let { AppsRepository.launchIntent(context, it) }
+                        direct ?: providerApp?.let { AppsRepository.launchIntent(context, it) }
                             ?: Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=$pkg"))
                                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
                     )
@@ -449,7 +458,8 @@ fun HomeScreen(
                             app = app,
                             subtitle = newSeasonSubtitle(season),
                             onClick = {
-                                val intent = app?.let { AppsRepository.launchIntent(context, it) }
+                                val intent = RecentlyPlayed.linkIntent(context, season.intentUri)
+                                    ?: app?.let { AppsRepository.launchIntent(context, it) }
                                 if (intent != null) onOpen(intent)
                                 else Toast.makeText(context, context.getString(R.string.cannot_open, season.title), Toast.LENGTH_SHORT).show()
                             },
@@ -458,6 +468,41 @@ fun HomeScreen(
                                 .focusRequester(newRequesters.getOrPut(season.id) { FocusRequester() }),
                             onLongClick = { menuNew = season },
                             onFocused = { focusedNew = season },
+                        )
+                    }
+                }
+                }
+                Spacer(Modifier.height(22.dp))
+            }
+        }
+        if (featuredRow.isNotEmpty()) {
+            item(key = "featured") {
+                RowTitle(stringResource(R.string.row_featured), hint = stringResource(R.string.featured_hint))
+                WithScrollSpec(rowSpec) {
+                LazyRow(
+                    state = featuredRowState,
+                    contentPadding = RowPadding,
+                    horizontalArrangement = Arrangement.spacedBy(15.dp),
+                    modifier = Modifier
+                        .entersAtFirst(firstFeatured, featuredRowState, scope)
+                        .onFocusChanged { if (!it.hasFocus) focusedFeatured = null },
+                ) {
+                    itemsIndexed(featuredRow, key = { _, f -> f.id }) { i, title ->
+                        val app = remember(title.packageName, allApps) { allApps.firstOrNull { it.packageName == title.packageName } }
+                        MediaTile(
+                            item = RecentItem(id = title.id, packageName = title.packageName, title = title.title,
+                                imageUri = title.imageUri, lastPlayed = 0, fromApp = true),
+                            app = app,
+                            subtitle = app?.label.orEmpty(),
+                            onClick = {
+                                val intent = RecentlyPlayed.linkIntent(context, title.intentUri)
+                                    ?: app?.let { AppsRepository.launchIntent(context, it) }
+                                if (intent != null) onOpen(intent)
+                                else Toast.makeText(context, context.getString(R.string.cannot_open, title.title), Toast.LENGTH_SHORT).show()
+                            },
+                            modifier = Modifier.size(200.dp, 112.dp)
+                                .then(if (i == 0) Modifier.focusRequester(firstFeatured) else Modifier),
+                            onFocused = { focusedFeatured = title },
                         )
                     }
                 }
@@ -619,6 +664,7 @@ private fun NewSeason.asCard() = RecentItem(id = id, packageName = packageName, 
 /** "New season · S3", or "S2 arrives December 1" before it premieres. */
 @Composable
 private fun newSeasonSubtitle(season: NewSeason): String {
+    season.episode?.let { return stringResource(R.string.new_episode, season.season, it) }
     if (!season.upcoming) return stringResource(R.string.new_season, season.season)
     val pattern = stringResource(R.string.date_day_month)
     val date = runCatching {

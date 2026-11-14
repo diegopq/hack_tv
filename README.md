@@ -32,6 +32,7 @@ It started as a way to speed up and clean up a Hisense Android TV (Android 12, M
   - [Recommendations](#recommendations)
   - [Recently played](#recently-played)
   - [New in your apps](#new-in-your-apps)
+  - [Featured in your apps](#featured-in-your-apps)
 - [Configuration](#configuration)
 - [Enable network debugging on your TV](#enable-network-debugging-on-your-tv)
   - [Let an AI agent guide you](#let-an-ai-agent-guide-you)
@@ -46,7 +47,7 @@ It started as a way to speed up and clean up a Hisense Android TV (Android 12, M
 |---|---|
 | UI design (HTML mockup) | ✅ Done: [`diseno/maqueta.html`](diseno/maqueta.html) |
 | Revert script for the TV optimizations | ✅ Done: [`revert_tv.sh`](revert_tv.sh) |
-| Android launcher app | 🚧 v0.11 in [`launcher/`](launcher/): Home with the recommendations banner (TMDB; without a key it spotlights the focused app), remote shortcut buttons, your apps (move and hide them), Recently played, HDMI inputs and settings shortcuts, the All apps and Settings pages, English and Spanish |
+| Android launcher app | 🚧 v0.12 in [`launcher/`](launcher/): Home with the recommendations banner (TMDB; without a key it spotlights the focused app), remote shortcut buttons, your apps (move and hide them), Recently played, HDMI inputs and settings shortcuts, the All apps and Settings pages, English and Spanish |
 
 ## Planned features
 
@@ -183,7 +184,11 @@ The history permission is listed as notification access, but the launcher only f
 
 ### New in your apps
 
-This row shows new seasons of the series you watch. The launcher remembers every series that appears in Continue watching (with the season you reached, even after the app drops the row), finds each one on TMDB by its exact name, and checks its seasons twice a day. A card appears for a later season that premiered in the last year (**New season · S3**) or that premieres in the next three months (**S2 arrives December 1**). OK opens the app you watched it in; hold OK to remove a card. It needs `TMDB_API_KEY`; without it the row doesn't show.
+This row shows new seasons of the series you watch. First come the ones the apps announce themselves: Prime Video and Apple TV mark a new season of something you watch as "new" in Continue watching, and OK opens it right there. Then the launcher adds what it finds on TMDB: it remembers every series that appears in Continue watching (with the season you reached, even after the app drops the row), finds each one on TMDB by its exact name, and checks its seasons twice a day. A card appears for a later season that premiered in the last year (**New season · S3**) or that premieres in the next three months (**S2 arrives December 1**). OK opens the app you watched it in; hold OK to remove a card. The TMDB part needs `TMDB_API_KEY`.
+
+### Featured in your apps
+
+Every app keeps publishing rows of titles for the TV's home screen ("preview channels") even though Google TV no longer shows them: Netflix, Prime Video, Disney+, Apple TV, Mercado Play, Runtime and others. This row shows a few from each app in turn, in the order of My apps, leaving out what the rows above already show. OK opens the title right in its app. The banner uses these links too: when the app features the recommended title, **Watch on …** opens the title instead of the app's home. They need no TMDB key, only the Continue watching permission.
 
 Release builds are signed with your local debug key, so they install over adb. Set up a real signing key before publishing an APK.
 

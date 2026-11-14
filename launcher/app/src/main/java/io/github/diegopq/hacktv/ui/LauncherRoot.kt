@@ -68,6 +68,8 @@ fun LauncherRoot(viewModel: LauncherViewModel, navigation: Flow<Tab>, initialTab
     val layout by viewModel.layout.collectAsStateWithLifecycle()
     val recent by viewModel.recent.collectAsStateWithLifecycle()
     val newSeasons by viewModel.newSeasons.collectAsStateWithLifecycle()
+    val featured by viewModel.featured.collectAsStateWithLifecycle()
+    val featuredRow by viewModel.featuredRow.collectAsStateWithLifecycle()
     val homeApps = remember(apps, layout) { AppsRepository.homeOrder(apps, layout) }
 
     var tab by rememberSaveable { mutableStateOf(initialTab) }
@@ -142,6 +144,8 @@ fun LauncherRoot(viewModel: LauncherViewModel, navigation: Flow<Tab>, initialTab
                     inputs = inputs,
                     recent = recent,
                     newSeasons = newSeasons,
+                    featured = featured,
+                    featuredRow = featuredRow,
                     recommendations = recommendations,
                     listState = listState,
                     firstAppRequester = firstApp,

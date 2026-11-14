@@ -39,6 +39,9 @@
     <string name="new_season">New season · S%1$d</string>
     <string name="new_season_soon">S%1$d arrives %2$s</string>
     <string name="date_day_month">MMMM d</string>
+    <string name="new_episode">New episode · S%1$d E%2$d</string>
+    <string name="row_featured">Featured in your apps</string>
+    <string name="featured_hint">What each app is promoting</string>
     <string name="recent_hint">From your apps · Hold OK to remove</string>
     <!-- Season and episode on a Recently played card, such as "S2 E5" -->
     <string name="episode_label">S%1$s E%2$s</string>

@@ -19,6 +19,9 @@ import io.github.diegopq.hacktv.data.HomeLayout
 import io.github.diegopq.hacktv.data.HomeLayoutStore
 import io.github.diegopq.hacktv.data.Inputs
 import io.github.diegopq.hacktv.data.LauncherApp
+import io.github.diegopq.hacktv.data.AppAnnouncements
+import io.github.diegopq.hacktv.data.AppFeatured
+import io.github.diegopq.hacktv.data.FeaturedItem
 import io.github.diegopq.hacktv.data.NewSeason
 import io.github.diegopq.hacktv.data.NewSeasons
 import io.github.diegopq.hacktv.data.RecentDismissals
@@ -61,11 +64,13 @@ class LauncherViewModel(application: Application) : AndroidViewModel(application
     private val _watchNext = MutableStateFlow<List<RecentItem>>(emptyList())
     private val recentCandidates: StateFlow<List<RecentItem>> =
         combine(_watchNext, PlayHistory.items, RecentDismissals.removed) { watchNext, history, removed ->
-            RecentlyPlayed.merge(watchNext, history).filter { RecentDismissals.isShown(it, removed) }
+            // An app's "new season" announcement belongs to New in your apps, not to what was played.
+            RecentlyPlayed.merge(watchNext.filterNot { it.isNewFromApp }, history).filter { RecentDismissals.isShown(it, removed) }
         }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
     /** New seasons of the series the user watches, without the ones they removed. */
+    /** New in your apps: what the apps announce as new, then the new seasons TMDB finds. */
     val newSeasons: StateFlow<List<NewSeason>> =
-        combine(NewSeasons.items, NewSeasons.dismissed) { items, removed -> items.filter { it.id !in removed } }
+        combine(_watchNext, NewSeasons.items, NewSeasons.dismissed, AppAnnouncements::merge)
             .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
     val recent: StateFlow<List<RecentItem>> = recentCandidates
@@ -75,6 +80,17 @@ class LauncherViewModel(application: Application) : AndroidViewModel(application
     /** The user's order and hidden apps for My apps. */
     private val _layout = MutableStateFlow(HomeLayoutStore.load(application))
     val layout: StateFlow<HomeLayout> = _layout.asStateFlow()
+
+    /** Every title the installed apps feature on the TV's home screen, with their links. */
+    private val _featured = MutableStateFlow<List<FeaturedItem>>(emptyList())
+    val featured: StateFlow<List<FeaturedItem>> = _featured.asStateFlow()
+
+    /** Featured in your apps: a few from each app, in My apps order, without what the other rows show. */
+    val featuredRow: StateFlow<List<FeaturedItem>> =
+        combine(_featured, recent, newSeasons, _apps, _layout) { all, recent, new, apps, layout ->
+            val shown = (recent.map { it.title } + new.map { it.title }).map(AppFeatured::key).toSet()
+            AppFeatured.row(all, AppsRepository.homeOrder(apps, layout).map { it.packageName }, shown)
+        }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
     /** Installing, updating or removing an app refreshes the tiles while Home is open. */
     private val packageReceiver = object : BroadcastReceiver() {
@@ -108,6 +124,7 @@ class LauncherViewModel(application: Application) : AndroidViewModel(application
         refreshRecent()
         viewModelScope.launch { recentCandidates.collect { prefetchArtwork(it.take(RecentlyPlayed.MAX_ITEMS + PREFETCH_EXTRA).mapNotNull { r -> r.imageUri }) } }
         viewModelScope.launch { newSeasons.collect { prefetchArtwork(it.mapNotNull { n -> n.imageUrl }) } }
+        viewModelScope.launch { featuredRow.collect { prefetchArtwork(it.mapNotNull { f -> f.imageUri }) } }
         val filter = IntentFilter().apply {
             addAction(Intent.ACTION_PACKAGE_ADDED)
             addAction(Intent.ACTION_PACKAGE_REMOVED)
@@ -121,6 +138,7 @@ class LauncherViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch {
             _apps.value = AppsRepository.load(getApplication())
             refreshRecommendations()
+            refreshRecent()   // the featured titles only count installed apps
         }
     }
 
@@ -162,6 +180,7 @@ class LauncherViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch(Dispatchers.IO) {
             val watchNext = RecentlyPlayed.loadWatchNext(context)
             _watchNext.value = watchNext
+            _featured.value = AppFeatured.load(context, _apps.value.map { it.packageName }.toSet())
             // The series in Continue watching are the ones whose new seasons "New in your apps" looks for.
             NewSeasons.load(context)
             val newShows = NewSeasons.track(context, watchNext)
