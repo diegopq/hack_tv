@@ -42,6 +42,21 @@
     <string name="new_episode">New episode · S%1$d E%2$d</string>
     <string name="row_featured">Featured in your apps</string>
     <string name="featured_hint">A selection from your apps</string>
+    <string name="details_cast">Cast</string>
+    <string name="details_seasons">Seasons</string>
+    <string name="details_trailer">Trailer</string>
+    <string name="details_created_by">Created by %1$s</string>
+    <string name="details_directed_by">Directed by %1$s</string>
+    <string name="details_minutes">%1$d min</string>
+    <string name="details_hours">%1$d h %2$d min</string>
+    <plurals name="details_season_count">
+        <item quantity="one">%d season</item>
+        <item quantity="other">%d seasons</item>
+    </plurals>
+    <plurals name="details_episode_count">
+        <item quantity="one">%d episode</item>
+        <item quantity="other">%d episodes</item>
+    </plurals>
     <string name="recent_hint">From your apps · Hold OK to remove</string>
     <!-- Season and episode on a Recently played card, such as "S2 E5" -->
     <string name="episode_label">S%1$s E%2$s</string>

@@ -232,7 +232,7 @@ object Tmdb {
     }
 
     /** TMDB leaves these series genres in English in both Spanish variants ("Sci-Fi & Fantasy"). */
-    private val SPANISH_TV_GENRES = mapOf(
+    internal val SPANISH_TV_GENRES = mapOf(
         10759 to "Acción y aventura",
         10762 to "Infantil",
         10763 to "Noticias",

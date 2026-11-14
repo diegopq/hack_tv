@@ -1,6 +1,5 @@
 package io.github.diegopq.hacktv.ui
 
-import android.app.SearchManager
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.key
@@ -74,6 +73,7 @@ import io.github.diegopq.hacktv.data.FeaturedItem
 import io.github.diegopq.hacktv.data.NewSeason
 import io.github.diegopq.hacktv.data.RecentItem
 import io.github.diegopq.hacktv.data.RecentlyPlayed
+import io.github.diegopq.hacktv.data.Recommendation
 import io.github.diegopq.hacktv.data.RecommendationSet
 import io.github.diegopq.hacktv.data.SystemShortcut
 import io.github.diegopq.hacktv.data.TvInputItem
@@ -83,7 +83,6 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-private const val GLOBAL_SEARCH = "android.search.action.GLOBAL_SEARCH"
 private val TOP_BAR_HEIGHT = 75.dp
 
 private val RowPadding = PaddingValues(horizontal = 60.dp, vertical = 6.dp)
@@ -277,6 +276,19 @@ fun HomeScreen(
         }
     }
 
+    // "Watch on …": the app's own link to the title when it features it, otherwise the app, or its store page.
+    fun watch(r: Recommendation) {
+        val pkg = r.providerPackage
+        val direct = RecentlyPlayed.linkIntent(context, AppFeatured.linkFor(featured, pkg, r.title))
+        val app = allApps.firstOrNull { it.packageName == pkg }
+        onOpen(
+            direct ?: app?.let { AppsRepository.launchIntent(context, it) }
+                ?: Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=$pkg")).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+        )
+    }
+    // "More info" opens the title's own page over Home; Back closes it and returns to the banner.
+    var detailFor by remember { mutableStateOf<Recommendation?>(null) }
+
     // Without recommendations the banner shows the focused app of My apps instead.
     var spotlightPackage by remember { mutableStateOf<String?>(null) }
     val spotlight = homeApps.firstOrNull { it.packageName == spotlightPackage } ?: homeApps.firstOrNull()
@@ -326,23 +338,8 @@ fun HomeScreen(
                 index = slide.mod(recs.size),
                 count = recs.size,
                 providerApp = providerApp,
-                onWatch = {
-                    val pkg = rec.providerPackage
-                    // When the app features this title itself, its own link opens it directly.
-                    val direct = RecentlyPlayed.linkIntent(context, AppFeatured.linkFor(featured, pkg, rec.title))
-                    onOpen(
-                        direct ?: providerApp?.let { AppsRepository.launchIntent(context, it) }
-                            ?: Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=$pkg"))
-                                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
-                    )
-                },
-                // Google TV's own search finds the title in every app, with a direct "Watch" link.
-                onInfo = {
-                    val search = Intent(GLOBAL_SEARCH).putExtra(SearchManager.QUERY, rec.title)
-                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    if (search.resolveActivity(context.packageManager) != null) onOpen(search)
-                    else onMessage(R.string.no_search)
-                },
+                onWatch = { watch(rec) },
+                onInfo = { detailFor = rec },
                 onPrevious = { slide = (slide - 1).mod(recs.size) },
                 onNext = { slide = (slide + 1).mod(recs.size) },
                 modifier = Modifier
@@ -592,6 +589,14 @@ fun HomeScreen(
                 menuRecent = null
                 pendingRecentFocus = item.id
             },
+        )
+    }
+    detailFor?.let { r ->
+        DetailPage(
+            recommendation = r,
+            providerApp = allApps.firstOrNull { it.packageName == r.providerPackage },
+            onWatch = { watch(r) },
+            onDismiss = { detailFor = null },
         )
     }
     menuNew?.let { season ->

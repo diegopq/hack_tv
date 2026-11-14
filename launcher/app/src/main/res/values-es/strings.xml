@@ -36,6 +36,21 @@
     <string name="new_episode">Nuevo episodio · T%1$d E%2$d</string>
     <string name="row_featured">Destacado en tus apps</string>
     <string name="featured_hint">Una selección de tus apps</string>
+    <string name="details_cast">Reparto</string>
+    <string name="details_seasons">Temporadas</string>
+    <string name="details_trailer">Tráiler</string>
+    <string name="details_created_by">Creada por %1$s</string>
+    <string name="details_directed_by">Dirigida por %1$s</string>
+    <string name="details_minutes">%1$d min</string>
+    <string name="details_hours">%1$d h %2$d min</string>
+    <plurals name="details_season_count">
+        <item quantity="one">%d temporada</item>
+        <item quantity="other">%d temporadas</item>
+    </plurals>
+    <plurals name="details_episode_count">
+        <item quantity="one">%d episodio</item>
+        <item quantity="other">%d episodios</item>
+    </plurals>
     <string name="recent_hint">Desde tus apps · Mantén OK para quitar</string>
     <string name="episode_label">T%1$s E%2$s</string>
     <string name="episode_only">E%1$s</string>

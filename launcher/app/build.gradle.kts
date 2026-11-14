@@ -26,8 +26,8 @@ android {
         applicationId = "io.github.diegopq.hacktv"
         minSdk = 31
         targetSdk = 36
-        versionCode = 28
-        versionName = "0.12.2"
+        versionCode = 29
+        versionName = "0.13.0"
 
         // Without a key the banner shows the built-in sample recommendations.
         buildConfigField("String", "TMDB_API_KEY", "\"${config("TMDB_API_KEY")}\"")

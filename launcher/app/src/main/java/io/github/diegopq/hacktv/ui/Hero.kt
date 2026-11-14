@@ -246,7 +246,7 @@ fun AppSpotlight(
 }
 
 @Composable
-private fun HeroButton(
+internal fun HeroButton(
     text: String,
     @DrawableRes icon: Int,
     primary: Boolean,
@@ -283,7 +283,7 @@ private fun HeroButton(
 
 /** The streaming service's own banner when the app is installed, a colored label otherwise. */
 @Composable
-private fun ProviderBadge(color: Color, name: String, app: LauncherApp?) {
+internal fun ProviderBadge(color: Color, name: String, app: LauncherApp?) {
     val shape = RoundedCornerShape(5.dp)
     Box(
         modifier = Modifier.size(48.dp, 27.dp).clip(shape).background(color),
