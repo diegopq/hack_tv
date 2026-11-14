@@ -84,6 +84,8 @@ private class PlaybackTracker(private val context: Context) {
         watched.keys.filter { it !in tokens }.forEach { token -> watched.remove(token)?.let { it.save(); it.release() } }
         for (controller in controllers) {
             if (controller.sessionToken in watched || controller.packageName == context.packageName) continue
+            // Recently played is only movies and series: YouTube and music players aren't followed.
+            if (!RecentlyPlayed.isMoviesOrSeriesApp(controller.packageName)) continue
             val session = Watched(controller)
             watched[controller.sessionToken] = session
             controller.registerCallback(session, handler)

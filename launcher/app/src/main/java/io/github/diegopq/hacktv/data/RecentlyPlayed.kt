@@ -46,6 +46,39 @@ object RecentlyPlayed {
     // More than the row shows, so cards the user removed leave room for older ones.
     private const val MAX_WATCH_NEXT = 40
 
+    /**
+     * Apps whose plays aren't movies or series: YouTube and music. Their player sessions don't say what kind
+     * of content they play, so the launcher leaves these apps out of Recently played altogether.
+     */
+    private val NOT_MOVIES_OR_SERIES = setOf(
+        "com.google.android.youtube.tv",
+        "com.google.android.youtube.tvkids",
+        "com.google.android.youtube.tvmusic",
+        "com.google.android.youtube",
+        "com.google.android.apps.youtube.music",
+        "com.spotify.tv.android",
+        "com.spotify.music",
+        "com.amazon.music.tv",
+        "com.amazon.mp3",
+        "com.apple.android.music",
+        "deezer.android.tv",
+        "deezer.android.app",
+        "com.aspiro.tidal",
+        "com.pandora.android.atv",
+        "com.pandora.android",
+    )
+
+    /** Recently played only shows movies and series. */
+    fun isMoviesOrSeriesApp(packageName: String): Boolean = packageName !in NOT_MOVIES_OR_SERIES
+
+    /** Continue watching's kinds that are movies or series; clips, songs, albums and playlists aren't. */
+    private val MOVIE_OR_SERIES_TYPES = setOf(
+        TvContract.PreviewPrograms.TYPE_MOVIE,
+        TvContract.PreviewPrograms.TYPE_TV_SERIES,
+        TvContract.PreviewPrograms.TYPE_TV_SEASON,
+        TvContract.PreviewPrograms.TYPE_TV_EPISODE,
+    )
+
     /** Lets the launcher read the Continue watching list that apps publish for the TV. */
     const val LISTINGS_PERMISSION = "android.permission.READ_TV_LISTINGS"
 
@@ -74,6 +107,7 @@ object RecentlyPlayed {
             WatchNextPrograms.COLUMN_LAST_ENGAGEMENT_TIME_UTC_MILLIS,
             WatchNextPrograms.COLUMN_INTENT_URI,
             WatchNextPrograms.COLUMN_BROWSABLE,
+            WatchNextPrograms.COLUMN_TYPE,
         )
         val items = ArrayList<RecentItem>()
         runCatching {
@@ -84,6 +118,9 @@ object RecentlyPlayed {
                     // A watchlist entry was saved, not played; and an app can hide a row by making it unbrowsable.
                     if (c.getInt(6) == WatchNextPrograms.WATCH_NEXT_TYPE_WATCHLIST) continue
                     if (!c.isNull(13) && c.getInt(13) == 0) continue
+                    // Only movies and series: no clips, songs, albums or playlists, and nothing from YouTube or music apps.
+                    if (!c.isNull(14) && c.getInt(14) !in MOVIE_OR_SERIES_TYPES) continue
+                    if (!isMoviesOrSeriesApp(str(1).orEmpty())) continue
                     val title = str(2) ?: continue
                     items += RecentItem(
                         id = "wn:${c.getLong(0)}",

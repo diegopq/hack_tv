@@ -65,7 +65,9 @@ class LauncherViewModel(application: Application) : AndroidViewModel(application
     private val recentCandidates: StateFlow<List<RecentItem>> =
         combine(_watchNext, PlayHistory.items, RecentDismissals.removed) { watchNext, history, removed ->
             // An app's "new season" announcement belongs to New in your apps, not to what was played.
-            RecentlyPlayed.merge(watchNext.filterNot { it.isNewFromApp }, history).filter { RecentDismissals.isShown(it, removed) }
+            // History saved before YouTube and music apps were left out stays hidden too.
+            val shows = history.filter { RecentlyPlayed.isMoviesOrSeriesApp(it.packageName) }
+            RecentlyPlayed.merge(watchNext.filterNot { it.isNewFromApp }, shows).filter { RecentDismissals.isShown(it, removed) }
         }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
     /** New seasons of the series the user watches, without the ones they removed. */
     /** New in your apps: what the apps announce as new, then the new seasons TMDB finds. */

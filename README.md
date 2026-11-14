@@ -166,7 +166,7 @@ With `TMDB_API_KEY` set in `.env`, the banner shows new releases on the streamin
 
 ### Recently played
 
-The row under My apps combines two sources, newest first:
+The row under My apps shows only movies and series (no YouTube videos or music) and combines two sources, newest first:
 
 - **Continue watching from your apps**: what apps such as YouTube or Prime Video publish for the TV, with the episode, the time left and a progress bar. OK opens it right where the app says. Apple TV, Disney+, Prime Video and Netflix publish it on a Hisense Google TV; Netflix adds a show only after you watch it.
 - **Your own history**: what any app played for at least 45 seconds, as the TV's player controls report it (title, artwork and position). Trailers that start by themselves on an app's home screen don't count. OK opens the app. Anything already in Continue watching is left out, so a show never appears twice, but playing it moves its card to the front. Some apps (Netflix, Apple TV) don't report titles to the player controls, so only their Continue watching shows. It stays on the TV, in the launcher's private storage, up to 30 entries.
