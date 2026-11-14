@@ -245,8 +245,12 @@ fun HomeScreen(
             spotlight != null -> onBackdrop(BackdropContent.Glow(Color(spotlight.accent ?: 0xFF24384C.toInt())))
         }
     }
-    LaunchedEffect(slide, recs) {
-        delay(9_000)
+    // A new recommendation every 15 seconds, enough to read a synopsis. While the banner's buttons have the
+    // focus it stays put (← → still change it); the count starts over once the focus leaves.
+    var heroFocused by remember { mutableStateOf(false) }
+    LaunchedEffect(slide, recs, heroFocused) {
+        if (heroFocused) return@LaunchedEffect
+        delay(15_000)
         if (recs.isNotEmpty()) slide = (slide + 1).mod(recs.size)
     }
 
@@ -295,7 +299,10 @@ fun HomeScreen(
                 onPrevious = { slide = (slide - 1).mod(recs.size) },
                 onNext = { slide = (slide + 1).mod(recs.size) },
                 modifier = Modifier
-                    .onFocusChanged { if (it.hasFocus) showBanner() }
+                    .onFocusChanged {
+                        heroFocused = it.hasFocus
+                        if (it.hasFocus) showBanner()
+                    }
                     // Fades out as the rows scroll up under the top bar.
                     .graphicsLayer {
                         alpha = if (listState.firstVisibleItemIndex > 0) 0f
