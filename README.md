@@ -266,6 +266,7 @@ I want to speed up my Android TV and remove things I don't use. It's on my local
 
 2. Propose a plan before changing anything
    - For every package you want to disable, explain in plain words what it does and what could stop working. Ask me to confirm each group, and ask which apps and features I actually use (casting/AirPlay, voice assistant, live TV tuner, manufacturer store, screensaver, etc.).
+   - Don't disable the active screensaver (`settings get secure screensaver_components`, usually Google's ambient mode `com.google.android.apps.tv.dreamx`) unless you switch to another one or turn screensavers off: when Android can't start the screensaver it puts the TV to sleep right away, so it turns off after the screensaver delay instead of the sleep timer.
    - Also propose performance tweaks: shorter animations (window_animation_scale, transition_animation_scale, animator_duration_scale) and a lower background process limit (device_config activity_manager max_cached_processes).
    - Do not change anything until I approve.
 
@@ -292,7 +293,7 @@ The prompt asks the agent to confirm before every change and to keep everything 
 
 ## Revert the TV optimizations
 
-The optimizations disable some preinstalled packages (Hisense extras, AirPlay, Google ambient screensaver) and speed up animations. To undo them, run this with network debugging enabled on the TV and `TV_IP` set in `.env`:
+The optimizations disable some preinstalled packages (Hisense extras, AirPlay, Google ambient screensaver) and speed up animations. If you disabled the ambient screensaver and the TV now turns off after about 10 minutes, turn it back on with `adb shell pm enable --user 0 com.google.android.apps.tv.dreamx`. To undo them, run this with network debugging enabled on the TV and `TV_IP` set in `.env`:
 
 ```bash
 ./revert_tv.sh               # re-enable everything

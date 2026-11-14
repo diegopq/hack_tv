@@ -266,6 +266,7 @@ Quiero acelerar mi Android TV y quitar lo que no uso. Está en mi red local con 
 
 2. Propón un plan antes de cambiar nada
    - Por cada paquete que quieras desactivar, explica en palabras sencillas qué hace y qué podría dejar de funcionar. Pídeme confirmar cada grupo y pregúntame qué apps y funciones uso de verdad (transmitir desde el celular/AirPlay, asistente de voz, sintonizador de TV abierta, tienda del fabricante, protector de pantalla, etc.).
+   - No desactives el protector de pantalla activo (`settings get secure screensaver_components`, normalmente el modo ambiente de Google `com.google.android.apps.tv.dreamx`) a menos que cambies a otro o apagues los protectores: cuando Android no puede iniciar el protector suspende la TV en ese momento, así que se apaga al tiempo del protector y no al del temporizador de apagado.
    - Propón también ajustes de rendimiento: animaciones más cortas (window_animation_scale, transition_animation_scale, animator_duration_scale) y un límite menor de procesos en segundo plano (device_config activity_manager max_cached_processes).
    - No cambies nada hasta que yo lo apruebe.
 
@@ -292,7 +293,7 @@ El prompt le pide al agente confirmar antes de cada cambio y que todo sea revers
 
 ## Revertir las optimizaciones de la TV
 
-Las optimizaciones desactivan algunos paquetes preinstalados (extras de Hisense, AirPlay, el protector de pantalla ambiental de Google) y aceleran las animaciones. Para deshacerlas, ejecuta esto con la depuración por red activada en la TV y `TV_IP` configurada en `.env`:
+Las optimizaciones desactivan algunos paquetes preinstalados (extras de Hisense, AirPlay, el protector de pantalla ambiental de Google) y aceleran las animaciones. Si desactivaste el protector ambiental y ahora la TV se apaga a los 10 minutos más o menos, vuelve a activarlo con `adb shell pm enable --user 0 com.google.android.apps.tv.dreamx`. Para deshacerlas, ejecuta esto con la depuración por red activada en la TV y `TV_IP` configurada en `.env`:
 
 ```bash
 ./revert_tv.sh               # reactiva todo
