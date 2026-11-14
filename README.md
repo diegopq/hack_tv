@@ -31,6 +31,7 @@ It started as a way to speed up and clean up a Hisense Android TV (Android 12, M
   - [Move and hide apps](#move-and-hide-apps)
   - [Recommendations](#recommendations)
   - [Recently played](#recently-played)
+  - [New in your apps](#new-in-your-apps)
 - [Configuration](#configuration)
 - [Enable network debugging on your TV](#enable-network-debugging-on-your-tv)
   - [Let an AI agent guide you](#let-an-ai-agent-guide-you)
@@ -45,7 +46,7 @@ It started as a way to speed up and clean up a Hisense Android TV (Android 12, M
 |---|---|
 | UI design (HTML mockup) | ✅ Done: [`diseno/maqueta.html`](diseno/maqueta.html) |
 | Revert script for the TV optimizations | ✅ Done: [`revert_tv.sh`](revert_tv.sh) |
-| Android launcher app | 🚧 v0.10 in [`launcher/`](launcher/): Home with the recommendations banner (TMDB; without a key it spotlights the focused app), remote shortcut buttons, your apps (move and hide them), Recently played, HDMI inputs and settings shortcuts, the All apps and Settings pages, English and Spanish |
+| Android launcher app | 🚧 v0.11 in [`launcher/`](launcher/): Home with the recommendations banner (TMDB; without a key it spotlights the focused app), remote shortcut buttons, your apps (move and hide them), Recently played, HDMI inputs and settings shortcuts, the All apps and Settings pages, English and Spanish |
 
 ## Planned features
 
@@ -160,7 +161,7 @@ Apps installed later go at the end of the row.
 
 ### Recommendations
 
-With `TMDB_API_KEY` set in `.env`, the banner shows popular movies and series from the last three years on the streaming apps installed on the TV, in the TV's language, in the variant of its country (Spanish outside Spain uses TMDB's Latin American Spanish, so "Deadpool & Wolverine" rather than Spain's "Deadpool y Lobezno"). Services are detected automatically: the launcher downloads TMDB's list of streaming services for your country and matches it against the names of your installed apps, so Mercado Play, Runtime, Pluto TV or MUBI show up on their own. A short built-in list covers apps whose name differs from TMDB's (Prime Video, HBO Max). Services with a small or classic catalog fall back to their popular titles of any year. Apps without a TMDB catalog (YouTube, Spotify) don't appear. Only services whose app is installed are used, and the banner shows a random mix of up to ten titles that takes turns between them, new each time you open Home. Results are cached for six hours. The country comes from the TV's time zone (America/Mexico_City means Mexico), because the language setting often names another country (`es-US` on a TV in Mexico). Set `TMDB_REGION` only to force a different country. **More info** opens the title in Google TV's search, which links to the app that has it. The key is built into the APK, so don't share your APK publicly.
+With `TMDB_API_KEY` set in `.env`, the banner shows new releases on the streaming apps installed on the TV first (movies from the last two months and series that premiered in the last three, marked **New on …**), then popular movies and series from the last three years, in the TV's language, in the variant of its country (Spanish outside Spain uses TMDB's Latin American Spanish, so "Deadpool & Wolverine" rather than Spain's "Deadpool y Lobezno"). Services are detected automatically: the launcher downloads TMDB's list of streaming services for your country and matches it against the names of your installed apps, so Mercado Play, Runtime, Pluto TV or MUBI show up on their own. A short built-in list covers apps whose name differs from TMDB's (Prime Video, HBO Max). Services with a small or classic catalog fall back to their popular titles of any year. Apps without a TMDB catalog (YouTube, Spotify) don't appear. Only services whose app is installed are used, and the banner shows a random mix of up to ten titles that takes turns between them, new each time you open Home. Results are cached for six hours. The country comes from the TV's time zone (America/Mexico_City means Mexico), because the language setting often names another country (`es-US` on a TV in Mexico). Set `TMDB_REGION` only to force a different country. **More info** opens the title in Google TV's search, which links to the app that has it. The key is built into the APK, so don't share your APK publicly.
 
 ### Recently played
 
@@ -179,6 +180,10 @@ adb shell cmd notification allow_listener io.github.diegopq.hacktv/io.github.die
 Hold OK on a card and choose **Remove from the list** to hide it. Apps' Continue watching rows can only be changed by their own app, so the launcher hides the card instead, until you play it again: then it comes back to the front on its own.
 
 The history permission is listed as notification access, but the launcher only follows the player controls and never reads notifications.
+
+### New in your apps
+
+This row shows new seasons of the series you watch. The launcher remembers every series that appears in Continue watching (with the season you reached, even after the app drops the row), finds each one on TMDB by its exact name, and checks its seasons twice a day. A card appears for a later season that premiered in the last year (**New season · S3**) or that premieres in the next three months (**S2 arrives December 1**). OK opens the app you watched it in; hold OK to remove a card. It needs `TMDB_API_KEY`; without it the row doesn't show.
 
 Release builds are signed with your local debug key, so they install over adb. Set up a real signing key before publishing an APK.
 

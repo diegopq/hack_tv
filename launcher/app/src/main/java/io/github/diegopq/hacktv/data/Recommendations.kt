@@ -46,6 +46,8 @@ data class Recommendation(
     val description: String,
     val imageUrl: String,
     val isMovie: Boolean,
+    /** A recent release: a movie from the last two months or a series that premiered in the last three. */
+    val isNew: Boolean = false,
 )
 
 /** Recommendations for each installed service (by service key). Empty until TMDB answers. */
@@ -63,9 +65,11 @@ data class RecommendationSet(val byKey: Map<String, List<Recommendation>>, val f
     /**
      * A random selection for the banner: shuffled, at most [size] titles, and never two from the
      * same service in a row when there's more than one service, so one app doesn't take over.
+     * Each service's new releases come first; its other popular titles only fill in after them.
      */
     fun shuffledPick(size: Int = 10): List<Recommendation> {
-        val byService = pool.shuffled().groupBy { it.provider }.mapValues { it.value.toMutableList() }
+        val byService = pool.shuffled().sortedByDescending { it.isNew }
+            .groupBy { it.provider }.mapValues { it.value.toMutableList() }
         val order = byService.keys.shuffled()
         val out = ArrayList<Recommendation>()
         while (out.size < size && byService.values.any { it.isNotEmpty() }) {

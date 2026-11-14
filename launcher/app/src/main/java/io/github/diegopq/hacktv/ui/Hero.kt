@@ -88,7 +88,7 @@ fun Hero(
                     ProviderBadge(color = providerColor, name = providerName, app = providerApp)
                     Spacer(Modifier.width(8.dp))
                     Text(
-                        stringResource(R.string.available_on, providerName),
+                        stringResource(if (rec.isNew) R.string.new_on else R.string.available_on, providerName),
                         fontSize = 10.5.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = HackColors.Muted,

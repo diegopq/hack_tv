@@ -18,7 +18,7 @@ import java.time.LocalDate
 import java.util.Locale
 
 /**
- * Recommendations from TMDB: popular, recent movies and series on each streaming service
+ * Recommendations from TMDB: new releases first, then popular, recent movies and series on each streaming service
  * the TV has installed (and only those), in the TV's language and country. Services are found
  * by matching installed apps' names against TMDB's list of services for the country.
  *
@@ -30,7 +30,7 @@ object Tmdb {
 
     private const val TAG = "Tmdb"
     private const val API = "https://api.themoviedb.org/3"
-    private const val IMAGES = "https://image.tmdb.org/t/p/w1280"
+    internal const val IMAGES = "https://image.tmdb.org/t/p/w1280"
     private const val PER_SERVICE = 10
     private const val MIN_PER_KIND = 3
     private const val MAX_AGE_MS = 6 * 60 * 60 * 1000L
@@ -150,14 +150,20 @@ object Tmdb {
         region: String,
         genreNames: Map<Int, String>,
     ): List<Recommendation> {
-        // Popular titles from the last three years: plain popularity returns decades-old catalog shows.
-        val recent = discoverPage(type, provider, language, region, genreNames, recentOnly = true)
-        if (recent.size >= MIN_PER_KIND) return recent
+        // New releases on the service first: movies released in the last two months, series that
+        // premiered in the last three. TMDB doesn't know when a service added an older title.
+        val new = discoverPage(type, provider, language, region, genreNames, Period.NEW)
+        // Then popular titles from the last three years: plain popularity returns decades-old catalog shows.
+        val recent = discoverPage(type, provider, language, region, genreNames, Period.RECENT)
+        val found = (new + recent).distinctBy { it.id }
+        if (recent.size >= MIN_PER_KIND) return found
         // Small or classic catalogs (Runtime, Mercado Play) have few recent, much-voted titles:
         // fill up with their popular titles of any year.
-        val any = discoverPage(type, provider, language, region, genreNames, recentOnly = false)
-        return (recent + any).distinctBy { it.id }
+        val any = discoverPage(type, provider, language, region, genreNames, Period.ANY)
+        return (found + any).distinctBy { it.id }
     }
+
+    private enum class Period { NEW, RECENT, ANY }
 
     private fun discoverPage(
         type: String,
@@ -165,7 +171,7 @@ object Tmdb {
         language: String,
         region: String,
         genreNames: Map<Int, String>,
-        recentOnly: Boolean,
+        period: Period,
     ): List<Recommendation> {
         val params = mutableMapOf(
             "watch_region" to region,
@@ -173,12 +179,23 @@ object Tmdb {
             "with_watch_monetization_types" to "flatrate|free|ads",
             "language" to language,
             "sort_by" to "popularity.desc",
-            "vote_count.gte" to if (recentOnly) "100" else "20",
             "include_adult" to "false",
         )
-        if (recentOnly) {
-            val dateParam = if (type == "tv") "first_air_date.gte" else "primary_release_date.gte"
-            params[dateParam] = LocalDate.now().minusYears(3).toString()
+        val dateParam = if (type == "tv") "first_air_date" else "primary_release_date"
+        val today = LocalDate.now()
+        when (period) {
+            Period.NEW -> {
+                // New releases have few votes yet, so popularity alone ranks them. News and talk shows
+                // premiere all the time and aren't what anyone means by a new release.
+                params["$dateParam.gte"] = today.minusDays(if (type == "tv") 90 else 60).toString()
+                params["$dateParam.lte"] = today.toString()
+                if (type == "tv") params["without_genres"] = "10763,10767"
+            }
+            Period.RECENT -> {
+                params["vote_count.gte"] = "100"
+                params["$dateParam.gte"] = today.minusYears(3).toString()
+            }
+            Period.ANY -> params["vote_count.gte"] = "20"
         }
         val json = get("/discover/$type", params)
         val results = json.optJSONArray("results") ?: return emptyList()
@@ -200,6 +217,7 @@ object Tmdb {
                 description = overview,
                 imageUrl = IMAGES + backdrop,
                 isMovie = type == "movie",
+                isNew = period == Period.NEW,
             )
         }
     }
@@ -225,7 +243,7 @@ object Tmdb {
         10768 to "Bélica y política",
     )
 
-    private fun get(path: String, params: Map<String, String>): JSONObject {
+    internal fun get(path: String, params: Map<String, String>): JSONObject {
         val query = (params + ("api_key" to BuildConfig.TMDB_API_KEY)).entries
             .joinToString("&") { (k, v) -> "$k=${URLEncoder.encode(v, "UTF-8")}" }
         val connection = URL("$API$path?$query").openConnection() as HttpURLConnection
@@ -250,7 +268,7 @@ object Tmdb {
      * has no es-US and falls back to Spain. TMDB keeps Latin American Spanish under es-MX, so Spanish
      * outside Spain uses that; other languages take the country directly (pt-BR, fr-CA, en-GB).
      */
-    private fun languageTag(): String {
+    internal fun languageTag(): String {
         val language = Locale.getDefault().language.ifBlank { "es" }
         val region = region()
         return when (language) {
@@ -273,7 +291,7 @@ object Tmdb {
 
     /** The cache is only valid for the same language, country and installed apps. */
     private fun queryKey(apps: List<LauncherApp>): String =
-        "v6|${languageTag()}|${region()}|" + apps.map { it.packageName }.sorted().joinToString(",").hashCode()
+        "v7|${languageTag()}|${region()}|" + apps.map { it.packageName }.sorted().joinToString(",").hashCode()
 
     private fun cacheFile(context: Context) = File(context.cacheDir, "tmdb-recommendations.json")
 
@@ -286,7 +304,7 @@ object Tmdb {
                             .put("id", r.id).put("provider", r.provider).put("providerName", r.providerName)
                             .put("providerPackage", r.providerPackage).put("title", r.title)
                             .put("year", r.year ?: 0).put("genres", r.genres).put("description", r.description)
-                            .put("image", r.imageUrl).put("movie", r.isMovie),
+                            .put("image", r.imageUrl).put("movie", r.isMovie).put("new", r.isNew),
                     )
                 }
             })
@@ -309,6 +327,7 @@ object Tmdb {
                     description = o.optString("description"),
                     imageUrl = o.getString("image"),
                     isMovie = o.optBoolean("movie"),
+                    isNew = o.optBoolean("new"),
                 )
             }
         }

@@ -69,6 +69,7 @@ import io.github.diegopq.hacktv.R
 import io.github.diegopq.hacktv.data.AppsRepository
 import io.github.diegopq.hacktv.data.Inputs
 import io.github.diegopq.hacktv.data.LauncherApp
+import io.github.diegopq.hacktv.data.NewSeason
 import io.github.diegopq.hacktv.data.RecentItem
 import io.github.diegopq.hacktv.data.RecentlyPlayed
 import io.github.diegopq.hacktv.data.RecommendationSet
@@ -137,6 +138,7 @@ fun HomeScreen(
     allApps: List<LauncherApp>,
     inputs: List<TvInputItem>,
     recent: List<RecentItem>,
+    newSeasons: List<NewSeason>,
     recommendations: RecommendationSet,
     listState: LazyListState,
     firstAppRequester: FocusRequester,
@@ -146,6 +148,7 @@ fun HomeScreen(
     onSaveOrder: (List<String>) -> Unit,
     onHide: (String) -> Unit,
     onRemoveRecent: (RecentItem) -> Unit,
+    onRemoveNewSeason: (String) -> Unit,
 ) {
     val context = LocalContext.current
     // A random pick of titles from every installed service, new each time Home is shown;
@@ -227,6 +230,13 @@ fun HomeScreen(
 
     // A focused Recently played card fills the screen behind Home with its artwork, as the banner does.
     var focusedRecent by remember { mutableStateOf<RecentItem?>(null) }
+    // "New in your apps" works the same way: artwork behind Home, hold OK to remove a card.
+    var focusedNew by remember { mutableStateOf<NewSeason?>(null) }
+    var menuNew by remember { mutableStateOf<NewSeason?>(null) }
+    var pendingNewFocus by remember { mutableStateOf<String?>(null) }
+    val newRequesters = remember { mutableMapOf<String, FocusRequester>() }
+    val newRowState = rememberLazyListState()
+    val firstNew = remember { FocusRequester() }
     // Hold OK on a card to remove it; focus then goes to its neighbor, as when hiding an app.
     var menuRecent by remember { mutableStateOf<RecentItem?>(null) }
     var pendingRecentFocus by remember { mutableStateOf<String?>(null) }
@@ -265,8 +275,8 @@ fun HomeScreen(
     val spotlight = homeApps.firstOrNull { it.packageName == spotlightPackage } ?: homeApps.firstOrNull()
     val showRecommendations = rec != null
 
-    LaunchedEffect(rec?.imageUrl, spotlight?.packageName, showRecommendations, focusedRecent?.imageUri) {
-        val recentArt = focusedRecent?.imageUri
+    LaunchedEffect(rec?.imageUrl, spotlight?.packageName, showRecommendations, focusedRecent?.imageUri, focusedNew?.imageUrl) {
+        val recentArt = focusedRecent?.imageUri ?: focusedNew?.imageUrl
         when {
             recentArt != null -> onBackdrop(BackdropContent.Image(recentArt))
             rec != null -> onBackdrop(BackdropContent.Image(rec.imageUrl))
@@ -420,6 +430,41 @@ fun HomeScreen(
                 Spacer(Modifier.height(22.dp))
             }
         }
+        if (newSeasons.isNotEmpty()) {
+            item(key = "new") {
+                RowTitle(stringResource(R.string.row_new), hint = stringResource(R.string.new_hint))
+                WithScrollSpec(rowSpec) {
+                LazyRow(
+                    state = newRowState,
+                    contentPadding = RowPadding,
+                    horizontalArrangement = Arrangement.spacedBy(15.dp),
+                    modifier = Modifier
+                        .entersAtFirst(firstNew, newRowState, scope, keepScroll = { menuNew != null })
+                        .onFocusChanged { if (!it.hasFocus) focusedNew = null },
+                ) {
+                    itemsIndexed(newSeasons, key = { _, n -> n.id }) { i, season ->
+                        val app = remember(season.packageName, allApps) { allApps.firstOrNull { it.packageName == season.packageName } }
+                        MediaTile(
+                            item = season.asCard(),
+                            app = app,
+                            subtitle = newSeasonSubtitle(season),
+                            onClick = {
+                                val intent = app?.let { AppsRepository.launchIntent(context, it) }
+                                if (intent != null) onOpen(intent)
+                                else Toast.makeText(context, context.getString(R.string.cannot_open, season.title), Toast.LENGTH_SHORT).show()
+                            },
+                            modifier = Modifier.size(200.dp, 112.dp)
+                                .then(if (i == 0) Modifier.focusRequester(firstNew) else Modifier)
+                                .focusRequester(newRequesters.getOrPut(season.id) { FocusRequester() }),
+                            onLongClick = { menuNew = season },
+                            onFocused = { focusedNew = season },
+                        )
+                    }
+                }
+                }
+                Spacer(Modifier.height(22.dp))
+            }
+        }
         if (inputs.isNotEmpty()) {
             item(key = "inputs") {
                 RowTitle(stringResource(R.string.row_inputs))
@@ -504,6 +549,34 @@ fun HomeScreen(
             },
         )
     }
+    menuNew?.let { season ->
+        RecentMenu(
+            item = season.asCard(),
+            app = allApps.firstOrNull { it.packageName == season.packageName },
+            onRemove = {
+                val index = newSeasons.indexOfFirst { it.id == season.id }
+                pendingNewFocus = (newSeasons.getOrNull(index + 1) ?: newSeasons.getOrNull(index - 1))?.id
+                onRemoveNewSeason(season.id)
+                if (pendingNewFocus == null) scope.launch { delay(50); runCatching { firstAppRequester.requestFocus() } }
+            },
+            onDismiss = {
+                menuNew = null
+                pendingNewFocus = season.id
+            },
+        )
+    }
+    LaunchedEffect(pendingNewFocus, newSeasons) {
+        val target = pendingNewFocus ?: return@LaunchedEffect
+        val index = newSeasons.indexOfFirst { it.id == target }
+        if (index < 0) return@LaunchedEffect
+        delay(50)
+        if (newRowState.layoutInfo.visibleItemsInfo.none { it.index == index }) {
+            newRowState.scrollToItem(index)
+            withFrameNanos { }
+        }
+        runCatching { newRequesters[target]?.requestFocus() }
+        pendingNewFocus = null
+    }
     // Back to the card, or to its neighbor once it's gone, scrolling the row to show it whole first.
     LaunchedEffect(pendingRecentFocus, recent) {
         val target = pendingRecentFocus ?: return@LaunchedEffect
@@ -538,6 +611,20 @@ private fun recentSubtitle(item: RecentItem, app: LauncherApp?): String {
     }
     val left = item.minutesLeft?.let { stringResource(R.string.minutes_left, it) }
     return listOfNotNull(episode, left).joinToString(" · ").ifEmpty { app?.label.orEmpty() }
+}
+
+/** A new season shown with the same card as Recently played. */
+private fun NewSeason.asCard() = RecentItem(id = id, packageName = packageName, title = title, imageUri = imageUrl, lastPlayed = 0, fromApp = true)
+
+/** "New season · S3", or "S2 arrives December 1" before it premieres. */
+@Composable
+private fun newSeasonSubtitle(season: NewSeason): String {
+    if (!season.upcoming) return stringResource(R.string.new_season, season.season)
+    val pattern = stringResource(R.string.date_day_month)
+    val date = runCatching {
+        java.time.LocalDate.parse(season.airDate).format(java.time.format.DateTimeFormatter.ofPattern(pattern, java.util.Locale.getDefault()))
+    }.getOrDefault(season.airDate)
+    return stringResource(R.string.new_season_soon, season.season, date)
 }
 
 /** Every installed app in a grid, alphabetically. The remote's App list button opens this page. */

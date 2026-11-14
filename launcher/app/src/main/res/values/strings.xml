@@ -10,6 +10,7 @@
 
     <!-- Recommendations banner -->
     <string name="available_on">Available on %1$s</string>
+    <string name="new_on">New on %1$s</string>
     <string name="watch_on">Watch on %1$s</string>
     <string name="get_app">Get %1$s</string>
     <string name="movie">Movie</string>
@@ -33,6 +34,11 @@
     <string name="row_inputs">Inputs</string>
     <string name="row_system">System</string>
     <string name="row_recent">Recently played</string>
+    <string name="row_new">New in your apps</string>
+    <string name="new_hint">New seasons of your series · Hold OK to remove</string>
+    <string name="new_season">New season · S%1$d</string>
+    <string name="new_season_soon">S%1$d arrives %2$s</string>
+    <string name="date_day_month">MMMM d</string>
     <string name="recent_hint">From your apps · Hold OK to remove</string>
     <!-- Season and episode on a Recently played card, such as "S2 E5" -->
     <string name="episode_label">S%1$s E%2$s</string>

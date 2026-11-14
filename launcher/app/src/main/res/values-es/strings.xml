@@ -6,6 +6,7 @@
     <string name="tab_settings">Ajustes</string>
 
     <string name="available_on">Disponible en %1$s</string>
+    <string name="new_on">Estreno en %1$s</string>
     <string name="watch_on">Ver en %1$s</string>
     <string name="get_app">Instalar %1$s</string>
     <string name="movie">Película</string>
@@ -27,6 +28,11 @@
     <string name="row_inputs">Entradas</string>
     <string name="row_system">Sistema</string>
     <string name="row_recent">Reproducido recientemente</string>
+    <string name="row_new">Nuevo en tus apps</string>
+    <string name="new_hint">Nuevas temporadas de tus series · Mantén OK para quitar</string>
+    <string name="new_season">Nueva temporada · T%1$d</string>
+    <string name="new_season_soon">T%1$d llega el %2$s</string>
+    <string name="date_day_month">d \'de\' MMMM</string>
     <string name="recent_hint">Desde tus apps · Mantén OK para quitar</string>
     <string name="episode_label">T%1$s E%2$s</string>
     <string name="episode_only">E%1$s</string>

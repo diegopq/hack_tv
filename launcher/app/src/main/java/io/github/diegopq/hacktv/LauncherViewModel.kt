@@ -19,6 +19,8 @@ import io.github.diegopq.hacktv.data.HomeLayout
 import io.github.diegopq.hacktv.data.HomeLayoutStore
 import io.github.diegopq.hacktv.data.Inputs
 import io.github.diegopq.hacktv.data.LauncherApp
+import io.github.diegopq.hacktv.data.NewSeason
+import io.github.diegopq.hacktv.data.NewSeasons
 import io.github.diegopq.hacktv.data.RecentDismissals
 import io.github.diegopq.hacktv.data.RecentItem
 import io.github.diegopq.hacktv.data.RecentlyPlayed
@@ -61,6 +63,11 @@ class LauncherViewModel(application: Application) : AndroidViewModel(application
         combine(_watchNext, PlayHistory.items, RecentDismissals.removed) { watchNext, history, removed ->
             RecentlyPlayed.merge(watchNext, history).filter { RecentDismissals.isShown(it, removed) }
         }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+    /** New seasons of the series the user watches, without the ones they removed. */
+    val newSeasons: StateFlow<List<NewSeason>> =
+        combine(NewSeasons.items, NewSeasons.dismissed) { items, removed -> items.filter { it.id !in removed } }
+            .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+
     val recent: StateFlow<List<RecentItem>> = recentCandidates
         .map { it.take(RecentlyPlayed.MAX_ITEMS) }
         .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
@@ -99,7 +106,8 @@ class LauncherViewModel(application: Application) : AndroidViewModel(application
             application.contentResolver.registerContentObserver(TvContract.WatchNextPrograms.CONTENT_URI, true, watchNextObserver)
         }
         refreshRecent()
-        viewModelScope.launch { recentCandidates.collect { prefetchArtwork(it.take(RecentlyPlayed.MAX_ITEMS + PREFETCH_EXTRA)) } }
+        viewModelScope.launch { recentCandidates.collect { prefetchArtwork(it.take(RecentlyPlayed.MAX_ITEMS + PREFETCH_EXTRA).mapNotNull { r -> r.imageUri }) } }
+        viewModelScope.launch { newSeasons.collect { prefetchArtwork(it.mapNotNull { n -> n.imageUrl }) } }
         val filter = IntentFilter().apply {
             addAction(Intent.ACTION_PACKAGE_ADDED)
             addAction(Intent.ACTION_PACKAGE_REMOVED)
@@ -151,18 +159,28 @@ class LauncherViewModel(application: Application) : AndroidViewModel(application
         val context = getApplication<Application>()
         PlayHistory.load(context)
         RecentDismissals.load(context)
-        viewModelScope.launch(Dispatchers.IO) { _watchNext.value = RecentlyPlayed.loadWatchNext(context) }
+        viewModelScope.launch(Dispatchers.IO) {
+            val watchNext = RecentlyPlayed.loadWatchNext(context)
+            _watchNext.value = watchNext
+            // The series in Continue watching are the ones whose new seasons "New in your apps" looks for.
+            NewSeasons.load(context)
+            val newShows = NewSeasons.track(context, watchNext)
+            NewSeasons.refresh(context, force = newShows)
+        }
     }
+
+    /** Hides a "New in your apps" card for good. */
+    fun removeNewSeason(id: String) = NewSeasons.dismiss(getApplication(), id)
 
     /**
      * Downloads the artwork of the Recently played cards before they are on screen: the ones further right,
      * and the next few that move into the row when a card is removed, which otherwise showed up blank
      * until their image arrived. Coil keeps them in its caches, so cards already loaded cost nothing.
      */
-    private fun prefetchArtwork(items: List<RecentItem>) {
+    private fun prefetchArtwork(uris: List<String>) {
         val context = getApplication<Application>()
         val loader = SingletonImageLoader.get(context)
-        items.mapNotNull { it.imageUri }.forEach { uri ->
+        uris.forEach { uri ->
             loader.enqueue(ImageRequest.Builder(context).data(uri).size(400, 225).build())
         }
     }

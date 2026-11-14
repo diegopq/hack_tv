@@ -67,6 +67,7 @@ fun LauncherRoot(viewModel: LauncherViewModel, navigation: Flow<Tab>, initialTab
     val recommendations by viewModel.recommendations.collectAsStateWithLifecycle()
     val layout by viewModel.layout.collectAsStateWithLifecycle()
     val recent by viewModel.recent.collectAsStateWithLifecycle()
+    val newSeasons by viewModel.newSeasons.collectAsStateWithLifecycle()
     val homeApps = remember(apps, layout) { AppsRepository.homeOrder(apps, layout) }
 
     var tab by rememberSaveable { mutableStateOf(initialTab) }
@@ -140,6 +141,7 @@ fun LauncherRoot(viewModel: LauncherViewModel, navigation: Flow<Tab>, initialTab
                     allApps = apps,
                     inputs = inputs,
                     recent = recent,
+                    newSeasons = newSeasons,
                     recommendations = recommendations,
                     listState = listState,
                     firstAppRequester = firstApp,
@@ -149,6 +151,7 @@ fun LauncherRoot(viewModel: LauncherViewModel, navigation: Flow<Tab>, initialTab
                     onSaveOrder = viewModel::saveOrder,
                     onHide = { viewModel.setHidden(it, true) },
                     onRemoveRecent = viewModel::removeRecent,
+                    onRemoveNewSeason = viewModel::removeNewSeason,
                 )
                 Tab.APPS -> AppsScreen(
                     apps = apps,
