@@ -148,6 +148,7 @@ fun LauncherRoot(viewModel: LauncherViewModel, navigation: Flow<Tab>, initialTab
                     onMessage = ::message,
                     onSaveOrder = viewModel::saveOrder,
                     onHide = { viewModel.setHidden(it, true) },
+                    onRemoveRecent = viewModel::removeRecent,
                 )
                 Tab.APPS -> AppsScreen(
                     apps = apps,

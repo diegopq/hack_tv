@@ -163,11 +163,13 @@ fun MediaTile(
     subtitle: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    onLongClick: (() -> Unit)? = null,
     onFocused: () -> Unit = {},
 ) {
     val context = LocalContext.current
     Surface(
         onClick = onClick,
+        onLongClick = onLongClick,
         modifier = modifier.onFocusChanged { if (it.isFocused) onFocused() },
         shape = ClickableSurfaceDefaults.shape(TileShape),
         scale = ClickableSurfaceDefaults.scale(focusedScale = 1.1f),

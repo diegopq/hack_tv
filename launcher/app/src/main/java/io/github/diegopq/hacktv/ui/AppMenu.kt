@@ -32,6 +32,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -44,6 +45,7 @@ import androidx.tv.material3.Surface
 import androidx.tv.material3.Text
 import io.github.diegopq.hacktv.R
 import io.github.diegopq.hacktv.data.LauncherApp
+import io.github.diegopq.hacktv.data.RecentItem
 import io.github.diegopq.hacktv.ui.theme.HackColors
 
 /** Opens Android's App info page for an app: storage, permissions, force stop, uninstall. */
@@ -63,6 +65,41 @@ fun AppMenu(
     onMove: () -> Unit,
     onToggleHidden: () -> Unit,
     onInfo: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val move = stringResource(R.string.menu_move)
+    val toggle = stringResource(if (hidden) R.string.menu_show else R.string.menu_hide)
+    val info = stringResource(R.string.menu_info)
+    ActionMenu(
+        thumb = app.banner ?: app.icon,
+        title = app.label,
+        items = buildList {
+            if (canMove) add(move to { onDismiss(); onMove() })
+            add(toggle to { onDismiss(); onToggleHidden() })
+            add(info to { onDismiss(); onInfo() })
+        },
+        onDismiss = onDismiss,
+    )
+}
+
+/** The menu that opens when OK is held on a Recently played card. */
+@Composable
+fun RecentMenu(item: RecentItem, app: LauncherApp?, onRemove: () -> Unit, onDismiss: () -> Unit) {
+    val remove = stringResource(R.string.menu_remove_recent)
+    ActionMenu(
+        thumb = app?.banner ?: app?.icon,
+        title = item.title,
+        items = listOf(remove to { onDismiss(); onRemove() }),
+        onDismiss = onDismiss,
+    )
+}
+
+/** A small dialog with a thumbnail, a title and a list of actions; the first action has the focus. */
+@Composable
+private fun ActionMenu(
+    thumb: ImageBitmap?,
+    title: String,
+    items: List<Pair<String, () -> Unit>>,
     onDismiss: () -> Unit,
 ) {
     val firstItem = remember { FocusRequester() }
@@ -90,7 +127,6 @@ fun AppMenu(
             verticalArrangement = Arrangement.spacedBy(5.dp),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 6.dp)) {
-                val thumb = app.banner ?: app.icon
                 if (thumb != null) {
                     Image(
                         bitmap = thumb,
@@ -101,7 +137,7 @@ fun AppMenu(
                     Spacer(Modifier.width(10.dp))
                 }
                 Text(
-                    app.label,
+                    title,
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
                     color = HackColors.Text,
@@ -109,14 +145,9 @@ fun AppMenu(
                     overflow = TextOverflow.Ellipsis,
                 )
             }
-            val items = buildList {
-                if (canMove) add(R.string.menu_move to { onDismiss(); onMove() })
-                add((if (hidden) R.string.menu_show else R.string.menu_hide) to { onDismiss(); onToggleHidden() })
-                add(R.string.menu_info to { onDismiss(); onInfo() })
-            }
             items.forEachIndexed { i, (label, action) ->
                 MenuItem(
-                    text = stringResource(label),
+                    text = label,
                     onClick = action,
                     modifier = if (i == 0) Modifier.focusRequester(firstItem) else Modifier,
                 )

@@ -45,7 +45,7 @@ Empezó como una forma de acelerar y limpiar una TV Hisense con Android TV (Andr
 |---|---|
 | Diseño de la interfaz (maqueta HTML) | ✅ Listo: [`diseno/maqueta.html`](diseno/maqueta.html) |
 | Script para revertir las optimizaciones de la TV | ✅ Listo: [`revert_tv.sh`](revert_tv.sh) |
-| App launcher para Android | 🚧 v0.9 en [`launcher/`](launcher/): Inicio con el banner de recomendaciones (TMDB; sin clave muestra la app enfocada), botones de acceso directo del control, tus apps (muévelas y ocúltalas), Reproducido recientemente, entradas HDMI y accesos a ajustes, las páginas Todas las apps y Ajustes, en español e inglés |
+| App launcher para Android | 🚧 v0.10 en [`launcher/`](launcher/): Inicio con el banner de recomendaciones (TMDB; sin clave muestra la app enfocada), botones de acceso directo del control, tus apps (muévelas y ocúltalas), Reproducido recientemente, entradas HDMI y accesos a ajustes, las páginas Todas las apps y Ajustes, en español e inglés |
 
 ## Funciones planeadas
 
@@ -175,6 +175,8 @@ La fila siempre está activa, y cada fuente necesita un permiso de una sola vez.
 adb shell pm grant io.github.diegopq.hacktv android.permission.READ_TV_LISTINGS      # Continuar viendo (igual que el aviso en pantalla)
 adb shell cmd notification allow_listener io.github.diegopq.hacktv/io.github.diegopq.hacktv.media.PlaybackListener   # tu historial propio
 ```
+
+Mantén OK en una tarjeta y elige **Quitar de la lista** para ocultarla. Las filas de Continuar viendo solo las puede cambiar su propia app, así que el launcher oculta la tarjeta hasta que lo vuelvas a reproducir: entonces regresa sola al principio.
 
 El permiso del historial aparece como acceso a notificaciones, pero el launcher solo sigue los controles de reproducción y nunca lee las notificaciones.
 

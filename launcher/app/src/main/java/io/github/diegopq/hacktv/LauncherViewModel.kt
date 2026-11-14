@@ -19,6 +19,7 @@ import io.github.diegopq.hacktv.data.HomeLayout
 import io.github.diegopq.hacktv.data.HomeLayoutStore
 import io.github.diegopq.hacktv.data.Inputs
 import io.github.diegopq.hacktv.data.LauncherApp
+import io.github.diegopq.hacktv.data.RecentDismissals
 import io.github.diegopq.hacktv.data.RecentItem
 import io.github.diegopq.hacktv.data.RecentlyPlayed
 import io.github.diegopq.hacktv.data.RecommendationSet
@@ -53,8 +54,12 @@ class LauncherViewModel(application: Application) : AndroidViewModel(application
 
     /** Continue watching from the apps, plus the launcher's own history without anything already in it. */
     private val _watchNext = MutableStateFlow<List<RecentItem>>(emptyList())
-    val recent: StateFlow<List<RecentItem>> = combine(_watchNext, PlayHistory.items, RecentlyPlayed::merge)
-        .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+    val recent: StateFlow<List<RecentItem>> =
+        combine(_watchNext, PlayHistory.items, RecentDismissals.removed) { watchNext, history, removed ->
+            RecentlyPlayed.merge(watchNext, history)
+                .filter { RecentDismissals.isShown(it, removed) }
+                .take(RecentlyPlayed.MAX_ITEMS)
+        }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
     /** The user's order and hidden apps for My apps. */
     private val _layout = MutableStateFlow(HomeLayoutStore.load(application))
@@ -140,8 +145,12 @@ class LauncherViewModel(application: Application) : AndroidViewModel(application
     fun refreshRecent() {
         val context = getApplication<Application>()
         PlayHistory.load(context)
+        RecentDismissals.load(context)
         viewModelScope.launch(Dispatchers.IO) { _watchNext.value = RecentlyPlayed.loadWatchNext(context) }
     }
+
+    /** Hides a Recently played card until it is played again. */
+    fun removeRecent(item: RecentItem) = RecentDismissals.remove(getApplication(), item)
 
     /** Saves the order of My apps after the user moved an app. */
     fun saveOrder(packages: List<String>) = updateLayout { it.copy(order = packages) }

@@ -17,6 +17,7 @@
     <string name="menu_move">Mover</string>
     <string name="menu_hide">Ocultar de Inicio</string>
     <string name="menu_show">Mostrar en Inicio</string>
+    <string name="menu_remove_recent">Quitar de la lista</string>
     <string name="menu_info">Información de la app</string>
     <string name="my_apps_hint">Mantén OK para mover u ocultar</string>
     <string name="moving_hint">← → para mover · OK para terminar</string>
@@ -26,7 +27,8 @@
     <string name="row_inputs">Entradas</string>
     <string name="row_system">Sistema</string>
     <string name="row_recent">Reproducido recientemente</string>
-    <string name="row_recent_hint">Desde tus apps</string>
+    <string name="removed_recent_toast">Se quitó %1$s. Vuelve a aparecer si lo vuelves a ver.</string>
+    <string name="recent_hint">Desde tus apps · Mantén OK para quitar</string>
     <string name="episode_label">T%1$s E%2$s</string>
     <string name="episode_only">E%1$s</string>
     <string name="minutes_left">Quedan %1$d min</string>

@@ -45,7 +45,7 @@ It started as a way to speed up and clean up a Hisense Android TV (Android 12, M
 |---|---|
 | UI design (HTML mockup) | ✅ Done: [`diseno/maqueta.html`](diseno/maqueta.html) |
 | Revert script for the TV optimizations | ✅ Done: [`revert_tv.sh`](revert_tv.sh) |
-| Android launcher app | 🚧 v0.9 in [`launcher/`](launcher/): Home with the recommendations banner (TMDB; without a key it spotlights the focused app), remote shortcut buttons, your apps (move and hide them), Recently played, HDMI inputs and settings shortcuts, the All apps and Settings pages, English and Spanish |
+| Android launcher app | 🚧 v0.10 in [`launcher/`](launcher/): Home with the recommendations banner (TMDB; without a key it spotlights the focused app), remote shortcut buttons, your apps (move and hide them), Recently played, HDMI inputs and settings shortcuts, the All apps and Settings pages, English and Spanish |
 
 ## Planned features
 
@@ -175,6 +175,8 @@ The row is always on, and each source needs a one-time permission. The launcher 
 adb shell pm grant io.github.diegopq.hacktv android.permission.READ_TV_LISTINGS      # Continue watching (same as the on-screen prompt)
 adb shell cmd notification allow_listener io.github.diegopq.hacktv/io.github.diegopq.hacktv.media.PlaybackListener   # your own history
 ```
+
+Hold OK on a card and choose **Remove from the list** to hide it. Apps' Continue watching rows can only be changed by their own app, so the launcher hides the card instead, until you play it again: then it comes back to the front on its own.
 
 The history permission is listed as notification access, but the launcher only follows the player controls and never reads notifications.
 

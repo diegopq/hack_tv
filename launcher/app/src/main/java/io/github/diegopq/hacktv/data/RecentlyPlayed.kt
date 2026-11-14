@@ -38,7 +38,8 @@ data class RecentItem(
 object RecentlyPlayed {
 
     const val MAX_ITEMS = 15
-    private const val MAX_WATCH_NEXT = 12
+    // More than the row shows, so cards the user removed leave room for older ones.
+    private const val MAX_WATCH_NEXT = 40
 
     /** Lets the launcher read the Continue watching list that apps publish for the TV. */
     const val LISTINGS_PERMISSION = "android.permission.READ_TV_LISTINGS"
@@ -116,7 +117,7 @@ object RecentlyPlayed {
             if (latest > item.lastPlayed) item.copy(lastPlayed = latest) else item
         }
         val own = history.filter { it !in matched }
-        return (published + own).sortedByDescending { it.lastPlayed }.take(MAX_ITEMS)
+        return (published + own).sortedByDescending { it.lastPlayed }
     }
 
     /** The names an item goes by: its title, and its episode or subtitle, normalized. */

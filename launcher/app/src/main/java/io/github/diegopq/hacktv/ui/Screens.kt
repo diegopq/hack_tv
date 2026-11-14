@@ -145,6 +145,7 @@ fun HomeScreen(
     onMessage: (Int) -> Unit,
     onSaveOrder: (List<String>) -> Unit,
     onHide: (String) -> Unit,
+    onRemoveRecent: (RecentItem) -> Unit,
 ) {
     val context = LocalContext.current
     // A random pick of titles from every installed service, new each time Home is shown;
@@ -226,6 +227,10 @@ fun HomeScreen(
 
     // A focused Recently played card fills the screen behind Home with its artwork, as the banner does.
     var focusedRecent by remember { mutableStateOf<RecentItem?>(null) }
+    // Hold OK on a card to remove it; focus then goes to its neighbor, as when hiding an app.
+    var menuRecent by remember { mutableStateOf<RecentItem?>(null) }
+    var pendingRecentFocus by remember { mutableStateOf<String?>(null) }
+    val recentRequesters = remember { mutableMapOf<String, FocusRequester>() }
     val recentRowState = rememberLazyListState()
     val inputsRowState = rememberLazyListState()
     val systemRowState = rememberLazyListState()
@@ -234,16 +239,25 @@ fun HomeScreen(
     val firstSystem = remember { FocusRequester() }
     // When the row changes order, a lazy row keeps showing the same first card, so a card that just moved to
     // the front (the one you came back from, usually) stayed off screen to the left. After each update the
-    // row shows the focused card again, or goes back to the start when the focus is elsewhere.
+    // row shows the focused card again, or goes back to the start when the focus is elsewhere. When the
+    // focused card still fits on screen from the start, the row goes back to the start too, so a card that
+    // came back in front of it (played again after being removed) isn't left hidden to the left.
     LaunchedEffect(recent) {
+        if (pendingRecentFocus != null) return@LaunchedEffect   // the menu's own focus handling below
         delay(50)   // let the row lay out the new order first
         val focusedIndex = focusedRecent?.let { focused -> recent.indexOfFirst { it.id == focused.id } } ?: -1
         val target = focusedIndex.coerceAtLeast(0)
         val info = recentRowState.layoutInfo
+        val cardSize = info.visibleItemsInfo.firstOrNull()?.size ?: return@LaunchedEffect
+        val end = info.viewportEndOffset - info.afterContentPadding
+        val perScreen = ((end + info.mainAxisItemSpacing) / (cardSize + info.mainAxisItemSpacing)).coerceAtLeast(1)
+        val atStart = recentRowState.firstVisibleItemIndex == 0 && recentRowState.firstVisibleItemScrollOffset == 0
         val shown = info.visibleItemsInfo.firstOrNull { it.index == target }
-        val fullyVisible = shown != null && shown.offset >= 0 &&
-            shown.offset + shown.size <= info.viewportEndOffset - info.afterContentPadding
-        if (!fullyVisible) recentRowState.animateScrollToItem(target)
+        val fullyVisible = shown != null && shown.offset >= 0 && shown.offset + shown.size <= end
+        when {
+            target < perScreen -> if (!atStart) recentRowState.animateScrollToItem(0)
+            !fullyVisible -> recentRowState.animateScrollToItem(target)
+        }
     }
 
     // Without recommendations the banner shows the focused app of My apps instead.
@@ -373,14 +387,14 @@ fun HomeScreen(
         }
         if (recent.isNotEmpty()) {
             item(key = "recent") {
-                RowTitle(stringResource(R.string.row_recent), hint = stringResource(R.string.row_recent_hint))
+                RowTitle(stringResource(R.string.row_recent), hint = stringResource(R.string.recent_hint))
                 WithScrollSpec(rowSpec) {
                 LazyRow(
                     state = recentRowState,
                     contentPadding = RowPadding,
                     horizontalArrangement = Arrangement.spacedBy(15.dp),
                     modifier = Modifier
-                        .entersAtFirst(firstRecent, recentRowState, scope)
+                        .entersAtFirst(firstRecent, recentRowState, scope, keepScroll = { menuRecent != null })
                         .onFocusChanged { if (!it.hasFocus) focusedRecent = null },
                 ) {
                     itemsIndexed(recent, key = { _, item -> item.id }) { i, item ->
@@ -395,7 +409,9 @@ fun HomeScreen(
                                 else Toast.makeText(context, context.getString(R.string.cannot_open, item.title), Toast.LENGTH_SHORT).show()
                             },
                             modifier = Modifier.size(200.dp, 112.dp)
-                                .then(if (i == 0) Modifier.focusRequester(firstRecent) else Modifier),
+                                .then(if (i == 0) Modifier.focusRequester(firstRecent) else Modifier)
+                                .focusRequester(recentRequesters.getOrPut(item.id) { FocusRequester() }),
+                            onLongClick = { menuRecent = item },
                             onFocused = { focusedRecent = item },
                         )
                     }
@@ -470,6 +486,39 @@ fun HomeScreen(
                 pendingFocus = app.packageName
             },
         )
+    }
+    menuRecent?.let { item ->
+        RecentMenu(
+            item = item,
+            app = allApps.firstOrNull { it.packageName == item.packageName },
+            onRemove = {
+                val index = recent.indexOfFirst { it.id == item.id }
+                pendingRecentFocus = (recent.getOrNull(index + 1) ?: recent.getOrNull(index - 1))?.id
+                onRemoveRecent(item)
+                Toast.makeText(context, context.getString(R.string.removed_recent_toast, item.title), Toast.LENGTH_LONG).show()
+                // The last card took the row with it: focus goes back to My apps.
+                if (pendingRecentFocus == null) scope.launch { delay(50); runCatching { firstAppRequester.requestFocus() } }
+            },
+            onDismiss = {
+                menuRecent = null
+                pendingRecentFocus = item.id
+            },
+        )
+    }
+    // Back to the card, or to its neighbor once it's gone, scrolling the row to show it whole first.
+    LaunchedEffect(pendingRecentFocus, recent) {
+        val target = pendingRecentFocus ?: return@LaunchedEffect
+        val index = recent.indexOfFirst { it.id == target }
+        if (index < 0) return@LaunchedEffect
+        delay(50)   // let the dialog close and the row lay out without the removed card
+        val info = recentRowState.layoutInfo
+        val shown = info.visibleItemsInfo.firstOrNull { it.index == index }
+        if (shown == null || shown.offset < 0 || shown.offset + shown.size > info.viewportEndOffset - info.afterContentPadding) {
+            recentRowState.scrollToItem(index)
+            withFrameNanos { }
+        }
+        runCatching { recentRequesters[target]?.requestFocus() }
+        pendingRecentFocus = null
     }
     LaunchedEffect(pendingFocus, rowApps) {
         val target = pendingFocus ?: return@LaunchedEffect
