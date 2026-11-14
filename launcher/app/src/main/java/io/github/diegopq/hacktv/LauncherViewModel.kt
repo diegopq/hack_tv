@@ -27,11 +27,14 @@ import io.github.diegopq.hacktv.data.Tmdb
 import io.github.diegopq.hacktv.data.TvInputItem
 import io.github.diegopq.hacktv.keys.RemoteKeys
 import io.github.diegopq.hacktv.media.PlayHistory
+import coil3.SingletonImageLoader
+import coil3.request.ImageRequest
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -54,12 +57,13 @@ class LauncherViewModel(application: Application) : AndroidViewModel(application
 
     /** Continue watching from the apps, plus the launcher's own history without anything already in it. */
     private val _watchNext = MutableStateFlow<List<RecentItem>>(emptyList())
-    val recent: StateFlow<List<RecentItem>> =
+    private val recentCandidates: StateFlow<List<RecentItem>> =
         combine(_watchNext, PlayHistory.items, RecentDismissals.removed) { watchNext, history, removed ->
-            RecentlyPlayed.merge(watchNext, history)
-                .filter { RecentDismissals.isShown(it, removed) }
-                .take(RecentlyPlayed.MAX_ITEMS)
+            RecentlyPlayed.merge(watchNext, history).filter { RecentDismissals.isShown(it, removed) }
         }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+    val recent: StateFlow<List<RecentItem>> = recentCandidates
+        .map { it.take(RecentlyPlayed.MAX_ITEMS) }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
     /** The user's order and hidden apps for My apps. */
     private val _layout = MutableStateFlow(HomeLayoutStore.load(application))
@@ -95,6 +99,7 @@ class LauncherViewModel(application: Application) : AndroidViewModel(application
             application.contentResolver.registerContentObserver(TvContract.WatchNextPrograms.CONTENT_URI, true, watchNextObserver)
         }
         refreshRecent()
+        viewModelScope.launch { recentCandidates.collect { prefetchArtwork(it.take(RecentlyPlayed.MAX_ITEMS + PREFETCH_EXTRA)) } }
         val filter = IntentFilter().apply {
             addAction(Intent.ACTION_PACKAGE_ADDED)
             addAction(Intent.ACTION_PACKAGE_REMOVED)
@@ -149,6 +154,19 @@ class LauncherViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch(Dispatchers.IO) { _watchNext.value = RecentlyPlayed.loadWatchNext(context) }
     }
 
+    /**
+     * Downloads the artwork of the Recently played cards before they are on screen: the ones further right,
+     * and the next few that move into the row when a card is removed, which otherwise showed up blank
+     * until their image arrived. Coil keeps them in its caches, so cards already loaded cost nothing.
+     */
+    private fun prefetchArtwork(items: List<RecentItem>) {
+        val context = getApplication<Application>()
+        val loader = SingletonImageLoader.get(context)
+        items.mapNotNull { it.imageUri }.forEach { uri ->
+            loader.enqueue(ImageRequest.Builder(context).data(uri).size(400, 225).build())
+        }
+    }
+
     /** Hides a Recently played card until it is played again. */
     fun removeRecent(item: RecentItem) = RecentDismissals.remove(getApplication(), item)
 
@@ -169,5 +187,10 @@ class LauncherViewModel(application: Application) : AndroidViewModel(application
         runCatching { tvInputs?.unregisterCallback(inputCallback) }
         getApplication<Application>().contentResolver.unregisterContentObserver(watchNextObserver)
         getApplication<Application>().unregisterReceiver(packageReceiver)
+    }
+
+    private companion object {
+        /** Cards beyond the row whose artwork is fetched ahead, to replace removed ones. */
+        const val PREFETCH_EXTRA = 5
     }
 }

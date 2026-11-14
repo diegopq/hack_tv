@@ -33,7 +33,6 @@
     <string name="row_inputs">Inputs</string>
     <string name="row_system">System</string>
     <string name="row_recent">Recently played</string>
-    <string name="removed_recent_toast">%1$s was removed. It comes back if you watch it again.</string>
     <string name="recent_hint">From your apps · Hold OK to remove</string>
     <!-- Season and episode on a Recently played card, such as "S2 E5" -->
     <string name="episode_label">S%1$s E%2$s</string>

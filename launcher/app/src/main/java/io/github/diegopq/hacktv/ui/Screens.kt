@@ -495,7 +495,6 @@ fun HomeScreen(
                 val index = recent.indexOfFirst { it.id == item.id }
                 pendingRecentFocus = (recent.getOrNull(index + 1) ?: recent.getOrNull(index - 1))?.id
                 onRemoveRecent(item)
-                Toast.makeText(context, context.getString(R.string.removed_recent_toast, item.title), Toast.LENGTH_LONG).show()
                 // The last card took the row with it: focus goes back to My apps.
                 if (pendingRecentFocus == null) scope.launch { delay(50); runCatching { firstAppRequester.requestFocus() } }
             },

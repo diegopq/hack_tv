@@ -27,7 +27,6 @@
     <string name="row_inputs">Entradas</string>
     <string name="row_system">Sistema</string>
     <string name="row_recent">Reproducido recientemente</string>
-    <string name="removed_recent_toast">Se quitó %1$s. Vuelve a aparecer si lo vuelves a ver.</string>
     <string name="recent_hint">Desde tus apps · Mantén OK para quitar</string>
     <string name="episode_label">T%1$s E%2$s</string>
     <string name="episode_only">E%1$s</string>
