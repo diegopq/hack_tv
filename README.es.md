@@ -166,8 +166,8 @@ Con `TMDB_API_KEY` en el `.env`, el banner muestra películas y series populares
 
 La fila debajo de Mis apps junta dos fuentes, de lo más reciente a lo más antiguo:
 
-- **Continuar viendo de tus apps**: lo que apps como YouTube o Prime Video publican para la TV, con el episodio, el tiempo restante y una barra de progreso. OK lo abre justo donde la app indica. No todas las apps lo publican (Netflix muchas veces no).
-- **Tu historial propio**: lo que cualquier app reprodujo durante al menos 45 segundos, según los controles de reproducción de la TV (título, imagen y posición). Los avances que se reproducen solos en la pantalla principal de una app no cuentan. OK abre la app. Lo que ya está en Continuar viendo se omite, así que nada aparece dos veces. Se queda en la TV, en el almacenamiento privado del launcher, hasta 30 entradas.
+- **Continuar viendo de tus apps**: lo que apps como YouTube o Prime Video publican para la TV, con el episodio, el tiempo restante y una barra de progreso. OK lo abre justo donde la app indica. Apple TV, Disney+, Prime Video y Netflix lo publican en una Hisense con Google TV; Netflix agrega una serie solo después de verla.
+- **Tu historial propio**: lo que cualquier app reprodujo durante al menos 45 segundos, según los controles de reproducción de la TV (título, imagen y posición). Los avances que se reproducen solos en la pantalla principal de una app no cuentan. OK abre la app. Lo que ya está en Continuar viendo se omite, así que nada aparece dos veces, pero reproducirlo pasa su tarjeta al principio. Algunas apps (Netflix, Apple TV) no informan el título a los controles de reproducción, así que de ellas solo aparece su Continuar viendo. Se queda en la TV, en el almacenamiento privado del launcher, hasta 30 entradas.
 
 Cada fuente necesita un permiso de una sola vez. Abre **Ajustes** en hack_tv y presiona OK en la tarjeta **Reproducido recientemente**: la primera vez pide en pantalla el permiso de Continuar viendo. Android TV no tiene pantalla para el permiso del historial, así que permítelo una vez por adb:
 

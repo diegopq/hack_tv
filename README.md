@@ -166,8 +166,8 @@ With `TMDB_API_KEY` set in `.env`, the banner shows popular movies and series fr
 
 The row under My apps combines two sources, newest first:
 
-- **Continue watching from your apps**: what apps such as YouTube or Prime Video publish for the TV, with the episode, the time left and a progress bar. OK opens it right where the app says. Not every app publishes it (Netflix often doesn't).
-- **Your own history**: what any app played for at least 45 seconds, as the TV's player controls report it (title, artwork and position). Trailers that start by themselves on an app's home screen don't count. OK opens the app. Anything already in Continue watching is left out, so a show never appears twice. It stays on the TV, in the launcher's private storage, up to 30 entries.
+- **Continue watching from your apps**: what apps such as YouTube or Prime Video publish for the TV, with the episode, the time left and a progress bar. OK opens it right where the app says. Apple TV, Disney+, Prime Video and Netflix publish it on a Hisense Google TV; Netflix adds a show only after you watch it.
+- **Your own history**: what any app played for at least 45 seconds, as the TV's player controls report it (title, artwork and position). Trailers that start by themselves on an app's home screen don't count. OK opens the app. Anything already in Continue watching is left out, so a show never appears twice, but playing it moves its card to the front. Some apps (Netflix, Apple TV) don't report titles to the player controls, so only their Continue watching shows. It stays on the TV, in the launcher's private storage, up to 30 entries.
 
 Each source needs a one-time permission. Open **Settings** in hack_tv and press OK on the **Recently played** card: the first press asks for Continue watching on screen. Android TV has no screen for the history permission, so allow it once over adb:
 

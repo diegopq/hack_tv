@@ -106,15 +106,22 @@ object RecentlyPlayed {
 
     /**
      * One row from both sources, newest first. The launcher's own history leaves out anything already in
-     * the apps' Continue watching list, so the same show never shows twice.
+     * the apps' Continue watching list, so the same show never shows twice. When it played something from
+     * that list more recently than the app says (Disney+ keeps its old date for a while), the card moves up
+     * to when it was really played.
      */
     fun merge(watchNext: List<RecentItem>, history: List<RecentItem>): List<RecentItem> {
-        val published = watchNext.map { keysOf(it) }
-        val own = history.filter { h ->
-            val mine = keysOf(h)
-            published.none { theirs -> sameContent(mine, theirs) }
+        val historyKeys = history.map { it to keysOf(it) }
+        val matched = HashSet<RecentItem>()
+        val published = watchNext.map { item ->
+            val theirs = keysOf(item)
+            val played = historyKeys.filter { (_, mine) -> sameContent(mine, theirs) }.map { it.first }
+            matched += played
+            val latest = played.maxOfOrNull { it.lastPlayed } ?: 0L
+            if (latest > item.lastPlayed) item.copy(lastPlayed = latest) else item
         }
-        return (watchNext + own).sortedByDescending { it.lastPlayed }.take(MAX_ITEMS)
+        val own = history.filter { it !in matched }
+        return (published + own).sortedByDescending { it.lastPlayed }.take(MAX_ITEMS)
     }
 
     /** The names an item goes by: its title, and its episode or subtitle, normalized. */
