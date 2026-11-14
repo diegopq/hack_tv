@@ -19,7 +19,6 @@ import io.github.diegopq.hacktv.data.HomeLayout
 import io.github.diegopq.hacktv.data.HomeLayoutStore
 import io.github.diegopq.hacktv.data.Inputs
 import io.github.diegopq.hacktv.data.LauncherApp
-import io.github.diegopq.hacktv.data.RecentAccess
 import io.github.diegopq.hacktv.data.RecentItem
 import io.github.diegopq.hacktv.data.RecentlyPlayed
 import io.github.diegopq.hacktv.data.RecommendationSet
@@ -27,7 +26,6 @@ import io.github.diegopq.hacktv.data.Tmdb
 import io.github.diegopq.hacktv.data.TvInputItem
 import io.github.diegopq.hacktv.keys.RemoteKeys
 import io.github.diegopq.hacktv.media.PlayHistory
-import io.github.diegopq.hacktv.media.PlaybackListener
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -57,16 +55,10 @@ class LauncherViewModel(application: Application) : AndroidViewModel(application
     private val _watchNext = MutableStateFlow<List<RecentItem>>(emptyList())
     val recent: StateFlow<List<RecentItem>> = combine(_watchNext, PlayHistory.items, RecentlyPlayed::merge)
         .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
-    private val _recentAccess = MutableStateFlow(RecentAccess(continueWatching = false, history = false))
-    val recentAccess: StateFlow<RecentAccess> = _recentAccess.asStateFlow()
 
     /** The user's order and hidden apps for My apps. */
     private val _layout = MutableStateFlow(HomeLayoutStore.load(application))
     val layout: StateFlow<HomeLayout> = _layout.asStateFlow()
-
-    /** Whether the remote-button service is on, for the card on the Settings page. */
-    private val _keyServiceOn = MutableStateFlow(false)
-    val keyServiceOn: StateFlow<Boolean> = _keyServiceOn.asStateFlow()
 
     /** Installing, updating or removing an app refreshes the tiles while Home is open. */
     private val packageReceiver = object : BroadcastReceiver() {
@@ -147,15 +139,9 @@ class LauncherViewModel(application: Application) : AndroidViewModel(application
 
     fun refreshRecent() {
         val context = getApplication<Application>()
-        _recentAccess.value = RecentAccess(
-            continueWatching = RecentlyPlayed.canReadWatchNext(context),
-            history = PlaybackListener.isAllowed(context),
-        )
         PlayHistory.load(context)
         viewModelScope.launch(Dispatchers.IO) { _watchNext.value = RecentlyPlayed.loadWatchNext(context) }
     }
-
-    fun clearHistory() = PlayHistory.clear(getApplication())
 
     /** Saves the order of My apps after the user moved an app. */
     fun saveOrder(packages: List<String>) = updateLayout { it.copy(order = packages) }
@@ -168,25 +154,6 @@ class LauncherViewModel(application: Application) : AndroidViewModel(application
         val updated = change(_layout.value)
         _layout.value = updated
         HomeLayoutStore.save(getApplication(), updated)
-    }
-
-    /**
-     * Turns the remote buttons on or off from the launcher's Settings card. Returns the new state, or null
-     * when the launcher can't change the setting itself (no WRITE_SECURE_SETTINGS): then the TV's
-     * Accessibility settings have to be opened instead.
-     */
-    fun toggleKeyService(): Boolean? {
-        val context = getApplication<Application>()
-        if (!RemoteKeys.canWriteSettings(context)) return null
-        val turnOn = !RemoteKeys.isEnabled(context)
-        RemoteKeys.setWanted(context, turnOn)
-        if (turnOn) RemoteKeys.enable(context) else RemoteKeys.disable(context)
-        refreshKeyService()
-        return turnOn
-    }
-
-    fun refreshKeyService() {
-        _keyServiceOn.value = RemoteKeys.isEnabled(getApplication())
     }
 
     override fun onCleared() {

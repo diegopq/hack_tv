@@ -67,7 +67,6 @@ import io.github.diegopq.hacktv.R
 import io.github.diegopq.hacktv.data.AppsRepository
 import io.github.diegopq.hacktv.data.Inputs
 import io.github.diegopq.hacktv.data.LauncherApp
-import io.github.diegopq.hacktv.data.RecentAccess
 import io.github.diegopq.hacktv.data.RecentItem
 import io.github.diegopq.hacktv.data.RecentlyPlayed
 import io.github.diegopq.hacktv.data.RecommendationSet
@@ -555,13 +554,8 @@ fun AppsScreen(
 /** Shortcuts to the TV's own settings pages. The remote's Settings button opens this page. */
 @Composable
 fun SettingsScreen(
-    keyServiceOn: Boolean,
-    recentAccess: RecentAccess,
     firstRequester: FocusRequester,
     onOpen: (Intent) -> Unit,
-    onMessage: (Int) -> Unit,
-    onToggleKeys: () -> Boolean?,
-    onRecent: () -> Unit,
 ) {
     val context = LocalContext.current
     Column(Modifier.fillMaxSize().padding(top = 93.dp)) {
@@ -575,45 +569,14 @@ fun SettingsScreen(
             horizontalArrangement = Arrangement.spacedBy(15.dp),
             verticalArrangement = Arrangement.spacedBy(15.dp),
         ) {
-            // The remote-button service first: it's the one setting this launcher needs from the TV.
-            item(key = "keys") {
-                GlassTile(
-                    icon = R.drawable.ic_remote,
-                    title = stringResource(R.string.sc_keys),
-                    subtitle = stringResource(if (keyServiceOn) R.string.sc_keys_on else R.string.sc_keys_off),
-                    onClick = {
-                        when (onToggleKeys()) {
-                            true -> onMessage(R.string.keys_turned_on)
-                            false -> onMessage(R.string.keys_turned_off)
-                            // The launcher can't change it itself: the TV's Accessibility page can.
-                            null -> onOpen(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth().height(110.dp).focusRequester(firstRequester),
-                )
-            }
-            item(key = "recent") {
-                GlassTile(
-                    icon = R.drawable.ic_play,
-                    title = stringResource(R.string.sc_recent),
-                    subtitle = stringResource(
-                        when {
-                            recentAccess.complete -> R.string.sc_recent_on
-                            recentAccess.continueWatching -> R.string.sc_recent_partial
-                            else -> R.string.sc_recent_off
-                        },
-                    ),
-                    onClick = onRecent,
-                    modifier = Modifier.fillMaxWidth().height(110.dp),
-                )
-            }
-            itemsIndexed(SystemShortcut.entries) { _, shortcut ->
+            itemsIndexed(SystemShortcut.entries) { i, shortcut ->
                 GlassTile(
                     icon = shortcut.icon,
                     title = stringResource(shortcut.title),
                     subtitle = stringResource(shortcut.subtitle),
                     onClick = { onOpen(shortcut.intent(context)) },
-                    modifier = Modifier.fillMaxWidth().height(110.dp),
+                    modifier = Modifier.fillMaxWidth().height(110.dp)
+                        .then(if (i == 0) Modifier.focusRequester(firstRequester) else Modifier),
                 )
             }
         }

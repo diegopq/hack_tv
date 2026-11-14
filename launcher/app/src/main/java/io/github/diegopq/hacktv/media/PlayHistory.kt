@@ -67,16 +67,6 @@ object PlayHistory {
         }
     }
 
-    fun clear(context: Context) {
-        val app = context.applicationContext
-        io.execute {
-            loaded = true
-            File(app.filesDir, ART_DIR).deleteRecursively()
-            File(app.filesDir, FILE).delete()
-            _items.value = emptyList()
-        }
-    }
-
     private fun ensureLoaded(context: Context) {
         if (loaded) return
         loaded = true

@@ -43,7 +43,6 @@ class MainActivity : ComponentActivity() {
         // What was just played in another app, and whether the Recently played row has its access.
         viewModel.refreshRecent()
         RemoteKeys.repairIfNeeded(this)
-        viewModel.refreshKeyService()
     }
 
     private fun pageFrom(intent: Intent?): Tab? =

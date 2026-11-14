@@ -45,7 +45,7 @@ It started as a way to speed up and clean up a Hisense Android TV (Android 12, M
 |---|---|
 | UI design (HTML mockup) | ✅ Done: [`diseno/maqueta.html`](diseno/maqueta.html) |
 | Revert script for the TV optimizations | ✅ Done: [`revert_tv.sh`](revert_tv.sh) |
-| Android launcher app | 🚧 v0.8 in [`launcher/`](launcher/): Home with the recommendations banner (TMDB; without a key it spotlights the focused app), remote shortcut buttons, your apps (move and hide them), Recently played, HDMI inputs and settings shortcuts, the All apps and Settings pages, English and Spanish |
+| Android launcher app | 🚧 v0.9 in [`launcher/`](launcher/): Home with the recommendations banner (TMDB; without a key it spotlights the focused app), remote shortcut buttons, your apps (move and hide them), Recently played, HDMI inputs and settings shortcuts, the All apps and Settings pages, English and Spanish |
 
 ## Planned features
 
@@ -128,13 +128,13 @@ adb shell settings put secure enabled_accessibility_services "<current value>:io
 adb shell settings put secure accessibility_enabled 1
 ```
 
-Recommended: let the launcher keep the service on. Some firmware (this Hisense, in standby) wipes the accessibility settings, which turns the buttons off; with this permission the launcher notices and turns the service back on within seconds. It lets the launcher turn the service on and off from its Settings card too:
+Recommended: let the launcher keep the service on. Some firmware (this Hisense, in standby) wipes the accessibility settings, which turns the buttons off; with this permission the launcher notices and turns the service back on within seconds:
 
 ```bash
 adb shell pm grant io.github.diegopq.hacktv android.permission.WRITE_SECURE_SETTINGS
 ```
 
-The **Remote buttons** card on the launcher's Settings page shows whether the service is on, and OK on it turns it off or on. Turned off there, the launcher stops turning it back on. Keys sent with `adb shell input keyevent` don't go through accessibility services, so test the buttons with the real remote.
+The remote buttons are always on: there's no switch for them in the launcher. Keys sent with `adb shell input keyevent` don't go through accessibility services, so test the buttons with the real remote.
 
 ### Make it the home screen
 
@@ -169,14 +169,14 @@ The row under My apps combines two sources, newest first:
 - **Continue watching from your apps**: what apps such as YouTube or Prime Video publish for the TV, with the episode, the time left and a progress bar. OK opens it right where the app says. Apple TV, Disney+, Prime Video and Netflix publish it on a Hisense Google TV; Netflix adds a show only after you watch it.
 - **Your own history**: what any app played for at least 45 seconds, as the TV's player controls report it (title, artwork and position). Trailers that start by themselves on an app's home screen don't count. OK opens the app. Anything already in Continue watching is left out, so a show never appears twice, but playing it moves its card to the front. Some apps (Netflix, Apple TV) don't report titles to the player controls, so only their Continue watching shows. It stays on the TV, in the launcher's private storage, up to 30 entries.
 
-Each source needs a one-time permission. Open **Settings** in hack_tv and press OK on the **Recently played** card: the first press asks for Continue watching on screen. Android TV has no screen for the history permission, so allow it once over adb:
+The row is always on, and each source needs a one-time permission. The launcher asks for Continue watching on screen the first time it opens. Android TV has no screen for the history permission, so allow it once over adb:
 
 ```bash
 adb shell pm grant io.github.diegopq.hacktv android.permission.READ_TV_LISTINGS      # Continue watching (same as the on-screen prompt)
 adb shell cmd notification allow_listener io.github.diegopq.hacktv/io.github.diegopq.hacktv.media.PlaybackListener   # your own history
 ```
 
-The history permission is listed as notification access, but the launcher only follows the player controls and never reads notifications. With both allowed, OK on the card clears your own history.
+The history permission is listed as notification access, but the launcher only follows the player controls and never reads notifications.
 
 Release builds are signed with your local debug key, so they install over adb. Set up a real signing key before publishing an APK.
 

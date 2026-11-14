@@ -45,7 +45,7 @@ Empezó como una forma de acelerar y limpiar una TV Hisense con Android TV (Andr
 |---|---|
 | Diseño de la interfaz (maqueta HTML) | ✅ Listo: [`diseno/maqueta.html`](diseno/maqueta.html) |
 | Script para revertir las optimizaciones de la TV | ✅ Listo: [`revert_tv.sh`](revert_tv.sh) |
-| App launcher para Android | 🚧 v0.8 en [`launcher/`](launcher/): Inicio con el banner de recomendaciones (TMDB; sin clave muestra la app enfocada), botones de acceso directo del control, tus apps (muévelas y ocúltalas), Reproducido recientemente, entradas HDMI y accesos a ajustes, las páginas Todas las apps y Ajustes, en español e inglés |
+| App launcher para Android | 🚧 v0.9 en [`launcher/`](launcher/): Inicio con el banner de recomendaciones (TMDB; sin clave muestra la app enfocada), botones de acceso directo del control, tus apps (muévelas y ocúltalas), Reproducido recientemente, entradas HDMI y accesos a ajustes, las páginas Todas las apps y Ajustes, en español e inglés |
 
 ## Funciones planeadas
 
@@ -128,13 +128,13 @@ adb shell settings put secure enabled_accessibility_services "<valor actual>:io.
 adb shell settings put secure accessibility_enabled 1
 ```
 
-Recomendado: deja que el launcher mantenga el servicio activo. Algunos firmwares (como esta Hisense, en reposo) borran la configuración de accesibilidad y con eso se apagan los botones; con este permiso el launcher lo detecta y vuelve a activar el servicio en segundos. También le permite activarlo y desactivarlo desde su tarjeta en Ajustes:
+Recomendado: deja que el launcher mantenga el servicio activo. Algunos firmwares (como esta Hisense, en reposo) borran la configuración de accesibilidad y con eso se apagan los botones; con este permiso el launcher lo detecta y vuelve a activar el servicio en segundos:
 
 ```bash
 adb shell pm grant io.github.diegopq.hacktv android.permission.WRITE_SECURE_SETTINGS
 ```
 
-La tarjeta **Botones del control** en la página Ajustes del launcher muestra si el servicio está activo, y con OK lo desactivas o activas. Si lo desactivas ahí, el launcher deja de reactivarlo. Las teclas enviadas con `adb shell input keyevent` no pasan por los servicios de accesibilidad, así que prueba los botones con el control real.
+Los botones del control siempre están activos: el launcher no tiene un interruptor para ellos. Las teclas enviadas con `adb shell input keyevent` no pasan por los servicios de accesibilidad, así que prueba los botones con el control real.
 
 ### Hacerlo la pantalla de inicio
 
@@ -169,14 +169,14 @@ La fila debajo de Mis apps junta dos fuentes, de lo más reciente a lo más anti
 - **Continuar viendo de tus apps**: lo que apps como YouTube o Prime Video publican para la TV, con el episodio, el tiempo restante y una barra de progreso. OK lo abre justo donde la app indica. Apple TV, Disney+, Prime Video y Netflix lo publican en una Hisense con Google TV; Netflix agrega una serie solo después de verla.
 - **Tu historial propio**: lo que cualquier app reprodujo durante al menos 45 segundos, según los controles de reproducción de la TV (título, imagen y posición). Los avances que se reproducen solos en la pantalla principal de una app no cuentan. OK abre la app. Lo que ya está en Continuar viendo se omite, así que nada aparece dos veces, pero reproducirlo pasa su tarjeta al principio. Algunas apps (Netflix, Apple TV) no informan el título a los controles de reproducción, así que de ellas solo aparece su Continuar viendo. Se queda en la TV, en el almacenamiento privado del launcher, hasta 30 entradas.
 
-Cada fuente necesita un permiso de una sola vez. Abre **Ajustes** en hack_tv y presiona OK en la tarjeta **Reproducido recientemente**: la primera vez pide en pantalla el permiso de Continuar viendo. Android TV no tiene pantalla para el permiso del historial, así que permítelo una vez por adb:
+La fila siempre está activa, y cada fuente necesita un permiso de una sola vez. El launcher pide en pantalla el de Continuar viendo la primera vez que se abre. Android TV no tiene pantalla para el permiso del historial, así que permítelo una vez por adb:
 
 ```bash
 adb shell pm grant io.github.diegopq.hacktv android.permission.READ_TV_LISTINGS      # Continuar viendo (igual que el aviso en pantalla)
 adb shell cmd notification allow_listener io.github.diegopq.hacktv/io.github.diegopq.hacktv.media.PlaybackListener   # tu historial propio
 ```
 
-El permiso del historial aparece como acceso a notificaciones, pero el launcher solo sigue los controles de reproducción y nunca lee las notificaciones. Con ambos permitidos, OK en la tarjeta borra tu historial propio.
+El permiso del historial aparece como acceso a notificaciones, pero el launcher solo sigue los controles de reproducción y nunca lee las notificaciones.
 
 Las versiones release se firman con tu clave local de depuración para poder instalarlas por adb. Configura una clave de firma real antes de publicar un APK.
 

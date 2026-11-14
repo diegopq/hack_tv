@@ -35,11 +35,6 @@ data class RecentItem(
         get() = if (durationMs > 0 && positionMs > 0) ((durationMs - positionMs) / 60_000L).toInt().takeIf { it > 0 } else null
 }
 
-/** Which sources of the Recently played row the launcher may use. */
-data class RecentAccess(val continueWatching: Boolean, val history: Boolean) {
-    val complete: Boolean get() = continueWatching && history
-}
-
 object RecentlyPlayed {
 
     const val MAX_ITEMS = 15

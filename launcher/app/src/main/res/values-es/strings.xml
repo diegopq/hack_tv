@@ -59,21 +59,9 @@
 
     <string name="keys_service_label">Botones del control de hack_tv</string>
     <string name="keys_service_description">Hace que los botones de acceso directo del control funcionen con hack_tv: Ajustes, lista de apps, YouTube, Prime Video y Disney+. Solo reacciona a esos botones y no lee nada de la pantalla.</string>
-    <string name="sc_keys">Botones del control</string>
-    <string name="sc_keys_on">Activado · OK para desactivar</string>
-    <string name="sc_keys_off">Desactivado · OK para activar</string>
-    <string name="keys_turned_on">Botones del control activados</string>
-    <string name="keys_turned_off">Botones del control desactivados. Puedes activarlos de nuevo aquí cuando quieras.</string>
 
     <!-- Reproducido recientemente -->
     <string name="history_service_label">hack_tv reproducido recientemente</string>
-    <string name="sc_recent">Reproducido recientemente</string>
-    <string name="sc_recent_on">Activado · OK borra tu historial</string>
-    <string name="sc_recent_partial">Solo de las apps · OK para tu historial</string>
-    <string name="sc_recent_off">Desactivado · OK para permitir</string>
-    <string name="history_cleared">Se borró tu historial. Lo de Continuar viendo de tus apps se queda.</string>
-    <string name="history_needs_adb">Tu historial propio necesita un permiso de una sola vez desde una computadora con adb. El README explica cómo.</string>
-    <string name="listings_denied">No se permitió Continuar viendo. Puedes permitirlo en los permisos de la app o con adb (consulta el README).</string>
     <string name="no_search">La búsqueda no está disponible en esta TV</string>
     <string name="coming_soon">Próximamente</string>
     <string name="cannot_open">No se pudo abrir %1$s</string>
