@@ -7,6 +7,8 @@
 
     <!-- Artwork for the recommendations banner (sample images now, TMDB later). -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Whether the TV is on Ethernet or Wi-Fi, for the icon next to the clock. -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
     <!-- Optional, granted only over adb: lets the launcher turn its remote-button service back on
          when the firmware drops it after an update. Without it nothing changes. -->

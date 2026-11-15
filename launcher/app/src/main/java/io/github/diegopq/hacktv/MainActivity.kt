@@ -42,6 +42,7 @@ class MainActivity : ComponentActivity() {
         viewModel.refreshRecommendations()
         // What was just played in another app, and whether the Recently played row has its access.
         viewModel.refreshRecent()
+        viewModel.refreshWeather()
         RemoteKeys.repairIfNeeded(this)
     }
 

@@ -89,6 +89,14 @@
     <string name="sc_language">Language</string>
     <string name="sc_language_sub">English</string>
     <string name="input_sub">Input</string>
+    <string name="weather_clear">Clear</string>
+    <string name="weather_partly">Partly cloudy</string>
+    <string name="weather_cloudy">Cloudy</string>
+    <string name="weather_fog">Fog</string>
+    <string name="weather_drizzle">Drizzle</string>
+    <string name="weather_rain">Rain</string>
+    <string name="weather_snow">Snow</string>
+    <string name="weather_storm">Storm</string>
     <string name="input_menu_title">What\'s on %1$s?</string>
     <string name="input_original_name">Just \"%1$s\"</string>
     <string name="device_set_top">Cable box</string>

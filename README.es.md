@@ -30,6 +30,7 @@ Empezó como una forma de acelerar y limpiar una TV Hisense con Android TV (Andr
   - [Hacerlo la pantalla de inicio](#hacerlo-la-pantalla-de-inicio)
   - [Mover y ocultar apps](#mover-y-ocultar-apps)
   - [Recomendaciones](#recomendaciones)
+  - [Reloj, red y clima](#reloj-red-y-clima)
   - [Entradas](#entradas)
   - [Reproducido recientemente](#reproducido-recientemente)
   - [Nuevo en tus apps](#nuevo-en-tus-apps)
@@ -48,7 +49,7 @@ Empezó como una forma de acelerar y limpiar una TV Hisense con Android TV (Andr
 |---|---|
 | Diseño de la interfaz (maqueta HTML) | ✅ Listo: [`diseno/maqueta.html`](diseno/maqueta.html) |
 | Script para revertir las optimizaciones de la TV | ✅ Listo: [`revert_tv.sh`](revert_tv.sh) |
-| App launcher para Android | 🚧 v0.15 en [`launcher/`](launcher/): Inicio con el banner de recomendaciones (TMDB; sin clave muestra la app enfocada), botones de acceso directo del control, tus apps (muévelas y ocúltalas), Reproducido recientemente, entradas HDMI y accesos a ajustes, las páginas Todas las apps y Ajustes, en español e inglés |
+| App launcher para Android | 🚧 v0.16 en [`launcher/`](launcher/): Inicio con el banner de recomendaciones (TMDB; sin clave muestra la app enfocada), botones de acceso directo del control, tus apps (muévelas y ocúltalas), Reproducido recientemente, entradas HDMI y accesos a ajustes, las páginas Todas las apps y Ajustes, en español e inglés |
 
 ## Funciones planeadas
 
@@ -164,6 +165,10 @@ Las apps que instales después se agregan al final de la fila.
 ### Recomendaciones
 
 Con `TMDB_API_KEY` en el `.env`, el banner muestra primero los estrenos en las apps de streaming instaladas en la TV (películas de los últimos dos meses y series estrenadas en los últimos tres, marcadas con **Estreno en …**) y después películas y series populares de los últimos tres años, en el idioma de la TV, en la variante de su país (el español fuera de España usa el español latinoamericano de TMDB, así que "Deadpool & Wolverine" en vez del "Deadpool y Lobezno" de España). Los servicios se detectan solos: el launcher descarga de TMDB la lista de servicios de streaming de tu país y la compara con los nombres de tus apps instaladas, así que Mercado Play, Runtime, Pluto TV o MUBI aparecen sin configurar nada. Una lista corta integrada cubre las apps cuyo nombre no coincide con el de TMDB (Prime Video, HBO Max). Los servicios con catálogo pequeño o clásico usan sus títulos populares de cualquier año. Las apps sin catálogo en TMDB (YouTube, Spotify) no aparecen. Solo se usan los servicios cuya app está instalada, y el banner muestra una mezcla aleatoria de hasta diez títulos que se turna entre ellos, distinta cada vez que abres Inicio. Los resultados se guardan en caché seis horas. El país se toma de la zona horaria de la TV (America/Mexico_City es México), porque el idioma a veces indica otro país (`es-US` en una TV en México). Configura `TMDB_REGION` solo para forzar otro país. **Más info** abre la página del título: su logo, año, temporadas o duración, clasificación de tu país, calificación de TMDB, sinopsis, creadores o dirección, reparto con fotos y, en las series, todas sus temporadas. **Ver en …** lo abre en su app y **Tráiler** lo reproduce en YouTube; Atrás regresa al banner donde lo dejaste. La clave queda dentro del APK, así que no compartas tu APK públicamente.
+
+### Reloj, red y clima
+
+Junto al reloj, un ícono muestra cómo está conectada la TV: Ethernet, Wi-Fi, una advertencia cuando la red no llega a internet, o tachado cuando no hay conexión. Debajo de la fecha va el clima actual, con un ícono, la temperatura (°C, o °F en Estados Unidos) y una palabra ("Despejado", "Parcialmente nublado", "Lluvia"). La TV no tiene GPS, así que su ubicación aproximada sale de su conexión a internet a través de [ipwho.is](https://ipwho.is/) una vez al día, y el clima de [Open-Meteo](https://open-meteo.com/) cada media hora. Ninguno necesita cuenta ni clave.
 
 ### Entradas
 

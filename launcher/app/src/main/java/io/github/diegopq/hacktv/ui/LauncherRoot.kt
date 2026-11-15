@@ -72,6 +72,8 @@ fun LauncherRoot(viewModel: LauncherViewModel, navigation: Flow<Tab>, initialTab
     val newSeasons by viewModel.newSeasons.collectAsStateWithLifecycle()
     val featured by viewModel.featured.collectAsStateWithLifecycle()
     val featuredRow by viewModel.featuredRow.collectAsStateWithLifecycle()
+    val connection by viewModel.connection.collectAsStateWithLifecycle()
+    val weather by viewModel.weather.collectAsStateWithLifecycle()
     val homeApps = remember(apps, layout) { AppsRepository.homeOrder(apps, layout) }
 
     var tab by rememberSaveable { mutableStateOf(initialTab) }
@@ -180,6 +182,8 @@ fun LauncherRoot(viewModel: LauncherViewModel, navigation: Flow<Tab>, initialTab
             }
             TopBar(
                 tab = tab,
+                connection = connection,
+                weather = weather,
                 onTabSelected = { tab = it },
                 onSearch = {
                     val pm = context.packageManager

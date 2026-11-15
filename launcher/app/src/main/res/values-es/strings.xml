@@ -81,6 +81,14 @@
     <string name="sc_language">Idioma</string>
     <string name="sc_language_sub">Español</string>
     <string name="input_sub">Entrada</string>
+    <string name="weather_clear">Despejado</string>
+    <string name="weather_partly">Parcialmente nublado</string>
+    <string name="weather_cloudy">Nublado</string>
+    <string name="weather_fog">Niebla</string>
+    <string name="weather_drizzle">Llovizna</string>
+    <string name="weather_rain">Lluvia</string>
+    <string name="weather_snow">Nieve</string>
+    <string name="weather_storm">Tormenta</string>
     <string name="input_menu_title">¿Qué está conectado en %1$s?</string>
     <string name="input_original_name">Solo \"%1$s\"</string>
     <string name="device_set_top">Decodificador</string>

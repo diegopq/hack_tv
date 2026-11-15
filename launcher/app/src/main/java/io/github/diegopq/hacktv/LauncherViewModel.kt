@@ -20,6 +20,10 @@ import io.github.diegopq.hacktv.data.HomeLayoutStore
 import io.github.diegopq.hacktv.data.Inputs
 import io.github.diegopq.hacktv.data.LauncherApp
 import io.github.diegopq.hacktv.data.AppAnnouncements
+import io.github.diegopq.hacktv.data.Connection
+import io.github.diegopq.hacktv.data.NetworkState
+import io.github.diegopq.hacktv.data.Weather
+import io.github.diegopq.hacktv.data.WeatherNow
 import io.github.diegopq.hacktv.data.AppFeatured
 import io.github.diegopq.hacktv.data.FeaturedItem
 import io.github.diegopq.hacktv.data.NewSeason
@@ -44,6 +48,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -81,6 +86,15 @@ class LauncherViewModel(application: Application) : AndroidViewModel(application
         .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
     /** The user's order and hidden apps for My apps. */
+    /** Ethernet, Wi-Fi or offline, for the icon next to the clock. */
+    val connection: StateFlow<Connection> = NetworkState.connection(application)
+        .stateIn(viewModelScope, SharingStarted.Eagerly, Connection.ETHERNET)
+
+    /** The weather now, under the date. */
+    private val _weather = MutableStateFlow(Weather.cached(application))
+    val weather: StateFlow<WeatherNow?> = _weather.asStateFlow()
+    private var weatherJob: Job? = null
+
     private val _layout = MutableStateFlow(HomeLayoutStore.load(application))
     val layout: StateFlow<HomeLayout> = _layout.asStateFlow()
 
@@ -142,6 +156,18 @@ class LauncherViewModel(application: Application) : AndroidViewModel(application
             _apps.value = AppsRepository.load(getApplication())
             refreshRecommendations()
             refreshRecent()   // the featured titles only count installed apps
+        }
+    }
+
+    /** New weather every half hour; on every return to Home it only downloads when the last one is older. */
+    fun refreshWeather() {
+        if (weatherJob?.isActive == true) return
+        weatherJob = viewModelScope.launch {
+            while (true) {
+                val context = getApplication<Application>()
+                if (!Weather.isFresh(context)) Weather.refresh(context)?.let { _weather.value = it }
+                delay(30 * 60 * 1000L)
+            }
         }
     }
 

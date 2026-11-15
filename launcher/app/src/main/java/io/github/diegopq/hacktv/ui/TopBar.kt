@@ -39,6 +39,9 @@ import androidx.tv.material3.Icon
 import androidx.tv.material3.Surface
 import androidx.tv.material3.Text
 import io.github.diegopq.hacktv.R
+import io.github.diegopq.hacktv.data.Connection
+import io.github.diegopq.hacktv.data.WeatherKind
+import io.github.diegopq.hacktv.data.WeatherNow
 import io.github.diegopq.hacktv.ui.theme.HackColors
 import kotlinx.coroutines.delay
 import java.text.SimpleDateFormat
@@ -47,10 +50,37 @@ import java.util.Locale
 
 private val TAB_ARROWS = setOf(Key.DirectionLeft, Key.DirectionRight)
 
-/** Search on the left, the Home / Apps / Settings tabs in the middle, Wi-Fi and the clock on the right. */
+private val WeatherKind.icon: Int
+    get() = when (this) {
+        WeatherKind.CLEAR_DAY -> R.drawable.ic_w_sun
+        WeatherKind.CLEAR_NIGHT -> R.drawable.ic_w_moon
+        WeatherKind.PARTLY_CLOUDY -> R.drawable.ic_w_partly
+        WeatherKind.CLOUDY -> R.drawable.ic_w_cloud
+        WeatherKind.FOG -> R.drawable.ic_w_fog
+        WeatherKind.DRIZZLE -> R.drawable.ic_w_drizzle
+        WeatherKind.RAIN -> R.drawable.ic_w_rain
+        WeatherKind.SNOW -> R.drawable.ic_w_snow
+        WeatherKind.STORM -> R.drawable.ic_w_storm
+    }
+
+private val WeatherKind.label: Int
+    get() = when (this) {
+        WeatherKind.CLEAR_DAY, WeatherKind.CLEAR_NIGHT -> R.string.weather_clear
+        WeatherKind.PARTLY_CLOUDY -> R.string.weather_partly
+        WeatherKind.CLOUDY -> R.string.weather_cloudy
+        WeatherKind.FOG -> R.string.weather_fog
+        WeatherKind.DRIZZLE -> R.string.weather_drizzle
+        WeatherKind.RAIN -> R.string.weather_rain
+        WeatherKind.SNOW -> R.string.weather_snow
+        WeatherKind.STORM -> R.string.weather_storm
+    }
+
+/** Search on the left, the Home / Apps / Settings tabs in the middle, the connection, clock and weather on the right. */
 @Composable
 fun TopBar(
     tab: Tab,
+    connection: Connection,
+    weather: WeatherNow?,
     onTabSelected: (Tab) -> Unit,
     onSearch: () -> Unit,
     modifier: Modifier = Modifier,
@@ -71,14 +101,22 @@ fun TopBar(
             }
         }
         Row(Modifier.align(Alignment.CenterEnd), verticalAlignment = Alignment.CenterVertically) {
+            // Ethernet or Wi-Fi, a warning when the network doesn't reach the internet, crossed out when offline.
             Icon(
-                painter = painterResource(R.drawable.ic_wifi),
+                painter = painterResource(
+                    when (connection) {
+                        Connection.ETHERNET -> R.drawable.ic_ethernet
+                        Connection.WIFI -> R.drawable.ic_wifi
+                        Connection.NO_INTERNET -> R.drawable.ic_no_internet
+                        Connection.OFFLINE -> R.drawable.ic_offline
+                    },
+                ),
                 contentDescription = null,
-                tint = HackColors.Muted,
+                tint = if (connection == Connection.ETHERNET || connection == Connection.WIFI) HackColors.Muted else Color(0xFFFFB74D),
                 modifier = Modifier.size(15.dp),
             )
             Spacer(Modifier.width(15.dp))
-            Clock()
+            Clock(weather)
         }
     }
 }
@@ -135,9 +173,9 @@ private fun Chip(
     }
 }
 
-/** Time in the TV's 12/24-hour setting and the date in the TV's language. */
+/** Time in the TV's 12/24-hour setting, the date in the TV's language, and the weather under it. */
 @Composable
-private fun Clock() {
+private fun Clock(weather: WeatherNow?) {
     val context = LocalContext.current
     val now by produceState(System.currentTimeMillis()) {
         while (true) {
@@ -152,5 +190,17 @@ private fun Clock() {
     Column(horizontalAlignment = Alignment.End) {
         Text(time, fontSize = 17.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.End)
         Text(date, fontSize = 9.5.sp, color = HackColors.Muted, textAlign = TextAlign.End)
+        weather?.let { w ->
+            Spacer(Modifier.height(3.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(painterResource(w.kind.icon), contentDescription = null, tint = HackColors.Muted, modifier = Modifier.size(12.dp))
+                Spacer(Modifier.width(5.dp))
+                Text(
+                    "${w.temperature}° · ${stringResource(w.kind.label)}",
+                    fontSize = 9.5.sp,
+                    color = HackColors.Muted,
+                )
+            }
+        }
     }
 }
