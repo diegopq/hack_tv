@@ -150,7 +150,7 @@ adb shell pm disable-user --user 0 com.google.android.tungsten.setupwraith   # i
 adb shell cmd package set-home-activity io.github.diegopq.hacktv/.MainActivity
 ```
 
-Wait about 30 seconds before rebooting, so Android saves the change. If another launcher's accessibility service redirects Home (Projectivy does), turn it off first. Before disabling setupwraith, check that your saved Wi-Fi doesn't belong to it: `adb shell dumpsys wifi | grep -o 'cname=[^ ]*'` should show `android.uid.system`. `./revert_tv.sh` turns both packages back on.
+Wait about 30 seconds before rebooting, so Android saves the change. If another launcher's accessibility service redirects Home, turn it off first. Before disabling setupwraith, check that your saved Wi-Fi doesn't belong to it: `adb shell dumpsys wifi | grep -o 'cname=[^ ]*'` should show `android.uid.system`. `./revert_tv.sh` turns both packages back on.
 
 ### Move and hide apps
 
