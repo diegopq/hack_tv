@@ -22,6 +22,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.focusGroup
+import androidx.compose.runtime.remember
+import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusProperties
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.key
@@ -85,7 +91,19 @@ fun TopBar(
     onSearch: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Box(modifier.fillMaxWidth().height(75.dp).padding(horizontal = 60.dp)) {
+    val tabRequesters = remember { Tab.entries.associateWith { FocusRequester() } }
+    // Coming up from a page always lands on the page's own tab. Android picked the tab nearest to the
+    // focused item, and since moving onto a tab opens its page, going up from an app on the right side of
+    // Apps switched to Settings, and from the left side to Home.
+    Box(
+        modifier.fillMaxWidth().height(75.dp).padding(horizontal = 60.dp)
+            .focusProperties {
+                onEnter = {
+                    if (requestedFocusDirection == FocusDirection.Up) runCatching { tabRequesters.getValue(tab).requestFocus() }
+                }
+            }
+            .focusGroup(),
+    ) {
         Pill(Modifier.align(Alignment.CenterStart)) {
             Chip(text = stringResource(R.string.search), icon = R.drawable.ic_search, onClick = onSearch)
         }
@@ -93,6 +111,7 @@ fun TopBar(
             Tab.entries.forEach { t ->
                 Chip(
                     text = stringResource(t.label),
+                    modifier = Modifier.focusRequester(tabRequesters.getValue(t)),
                     active = t == tab,
                     onClick = { onTabSelected(t) },
                     // As on Google TV, moving onto a tab already shows its page.
@@ -140,13 +159,14 @@ private fun Pill(modifier: Modifier = Modifier, content: @Composable RowScope.()
 private fun Chip(
     text: String,
     onClick: () -> Unit,
+    modifier: Modifier = Modifier,
     @DrawableRes icon: Int? = null,
     active: Boolean = false,
     onFocused: () -> Unit = {},
 ) {
     Surface(
         onClick = onClick,
-        modifier = Modifier
+        modifier = modifier
             .height(29.dp)
             .onFocusChanged { if (it.isFocused) onFocused() }
             // A held arrow repeats; on the tabs that skipped a tab, since each tab you pass opens its page.
