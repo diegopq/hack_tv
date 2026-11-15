@@ -49,7 +49,7 @@ It started as a way to speed up and clean up a Hisense Android TV (Android 12, M
 |---|---|
 | UI design (HTML mockup) | ✅ Done: [`diseno/maqueta.html`](diseno/maqueta.html) |
 | Revert script for the TV optimizations | ✅ Done: [`revert_tv.sh`](revert_tv.sh) |
-| Android launcher app | 🚧 v0.16 in [`launcher/`](launcher/): Home with the recommendations banner (TMDB; without a key it spotlights the focused app), remote shortcut buttons, your apps (move and hide them), Recently played, HDMI inputs and settings shortcuts, the All apps and Settings pages, English and Spanish |
+| Android launcher app | 🚧 v0.17 in [`launcher/`](launcher/): Home with the recommendations banner (TMDB; without a key it spotlights the focused app), remote shortcut buttons, your apps (move and hide them), Recently played, HDMI inputs and settings shortcuts, the All apps and Settings pages, English and Spanish |
 
 ## Planned features
 
@@ -168,7 +168,7 @@ With `TMDB_API_KEY` set in `.env`, the banner shows new releases on the streamin
 
 ### Clock, network and weather
 
-Next to the clock, an icon shows how the TV is online: Ethernet, Wi-Fi, a warning when the network doesn't reach the internet, or crossed out when offline. Under the date goes the weather now, with an icon, the temperature (°C, or °F in the United States) and a word ("Clear", "Partly cloudy", "Rain"). The TV has no GPS, so its approximate place comes from its internet connection through [ipwho.is](https://ipwho.is/) once a day, and the weather from [Open-Meteo](https://open-meteo.com/) every half hour. Neither needs an account or a key.
+Next to the clock, an icon shows how the TV is online: Ethernet, Wi-Fi, a warning when the network doesn't reach the internet, or crossed out when offline. Beside it, what the TV is downloading and uploading right now (↓ and ↑, in Kbps or Mbps), measured once a second only while Home is on screen; it's the TV's current traffic, not a speed test. Under the date goes the weather now, with an icon, the temperature (°C, or °F in the United States) and a word ("Clear", "Partly cloudy", "Rain"). The TV has no GPS, so its approximate place comes from its internet connection through [ipwho.is](https://ipwho.is/) once a day, and the weather from [Open-Meteo](https://open-meteo.com/) every half hour. Neither needs an account or a key.
 
 ### Inputs
 

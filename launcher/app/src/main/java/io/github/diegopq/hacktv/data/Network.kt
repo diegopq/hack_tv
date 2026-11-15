@@ -4,6 +4,10 @@ import android.content.Context
 import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkCapabilities
+import android.net.TrafficStats
+import android.os.SystemClock
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
@@ -42,4 +46,37 @@ object NetworkState {
         runCatching { manager?.registerDefaultNetworkCallback(callback) }
         awaitClose { runCatching { manager?.unregisterNetworkCallback(callback) } }
     }.distinctUntilChanged()
+}
+
+/** What the TV is downloading and uploading right now, in bits per second. */
+data class Throughput(val downBps: Long, val upBps: Long)
+
+object NetworkTraffic {
+
+    /**
+     * The TV's traffic, sampled once a second from the system's byte counters (every app, not just this
+     * one). It only runs while someone collects it, that is, while Home is on screen.
+     */
+    fun throughput(): Flow<Throughput> = flow {
+        var rx = TrafficStats.getTotalRxBytes()
+        var tx = TrafficStats.getTotalTxBytes()
+        var at = SystemClock.elapsedRealtime()
+        if (rx == TrafficStats.UNSUPPORTED.toLong() || tx == TrafficStats.UNSUPPORTED.toLong()) return@flow
+        while (true) {
+            delay(1_000)
+            val nowRx = TrafficStats.getTotalRxBytes()
+            val nowTx = TrafficStats.getTotalTxBytes()
+            val now = SystemClock.elapsedRealtime()
+            val seconds = ((now - at).coerceAtLeast(1)) / 1000.0
+            emit(
+                Throughput(
+                    downBps = (((nowRx - rx).coerceAtLeast(0)) * 8 / seconds).toLong(),
+                    upBps = (((nowTx - tx).coerceAtLeast(0)) * 8 / seconds).toLong(),
+                ),
+            )
+            rx = nowRx
+            tx = nowTx
+            at = now
+        }
+    }
 }

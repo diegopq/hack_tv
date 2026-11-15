@@ -22,6 +22,8 @@ import io.github.diegopq.hacktv.data.LauncherApp
 import io.github.diegopq.hacktv.data.AppAnnouncements
 import io.github.diegopq.hacktv.data.Connection
 import io.github.diegopq.hacktv.data.NetworkState
+import io.github.diegopq.hacktv.data.NetworkTraffic
+import io.github.diegopq.hacktv.data.Throughput
 import io.github.diegopq.hacktv.data.Weather
 import io.github.diegopq.hacktv.data.WeatherNow
 import io.github.diegopq.hacktv.data.AppFeatured
@@ -89,6 +91,10 @@ class LauncherViewModel(application: Application) : AndroidViewModel(application
     /** Ethernet, Wi-Fi or offline, for the icon next to the clock. */
     val connection: StateFlow<Connection> = NetworkState.connection(application)
         .stateIn(viewModelScope, SharingStarted.Eagerly, Connection.ETHERNET)
+
+    /** Download and upload right now, next to the connection icon; sampled only while Home is on screen. */
+    val throughput: StateFlow<Throughput?> = NetworkTraffic.throughput()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(2_000), null)
 
     /** The weather now, under the date. */
     private val _weather = MutableStateFlow(Weather.cached(application))

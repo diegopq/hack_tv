@@ -49,7 +49,7 @@ Empezó como una forma de acelerar y limpiar una TV Hisense con Android TV (Andr
 |---|---|
 | Diseño de la interfaz (maqueta HTML) | ✅ Listo: [`diseno/maqueta.html`](diseno/maqueta.html) |
 | Script para revertir las optimizaciones de la TV | ✅ Listo: [`revert_tv.sh`](revert_tv.sh) |
-| App launcher para Android | 🚧 v0.16 en [`launcher/`](launcher/): Inicio con el banner de recomendaciones (TMDB; sin clave muestra la app enfocada), botones de acceso directo del control, tus apps (muévelas y ocúltalas), Reproducido recientemente, entradas HDMI y accesos a ajustes, las páginas Todas las apps y Ajustes, en español e inglés |
+| App launcher para Android | 🚧 v0.17 en [`launcher/`](launcher/): Inicio con el banner de recomendaciones (TMDB; sin clave muestra la app enfocada), botones de acceso directo del control, tus apps (muévelas y ocúltalas), Reproducido recientemente, entradas HDMI y accesos a ajustes, las páginas Todas las apps y Ajustes, en español e inglés |
 
 ## Funciones planeadas
 
@@ -168,7 +168,7 @@ Con `TMDB_API_KEY` en el `.env`, el banner muestra primero los estrenos en las a
 
 ### Reloj, red y clima
 
-Junto al reloj, un ícono muestra cómo está conectada la TV: Ethernet, Wi-Fi, una advertencia cuando la red no llega a internet, o tachado cuando no hay conexión. Debajo de la fecha va el clima actual, con un ícono, la temperatura (°C, o °F en Estados Unidos) y una palabra ("Despejado", "Parcialmente nublado", "Lluvia"). La TV no tiene GPS, así que su ubicación aproximada sale de su conexión a internet a través de [ipwho.is](https://ipwho.is/) una vez al día, y el clima de [Open-Meteo](https://open-meteo.com/) cada media hora. Ninguno necesita cuenta ni clave.
+Junto al reloj, un ícono muestra cómo está conectada la TV: Ethernet, Wi-Fi, una advertencia cuando la red no llega a internet, o tachado cuando no hay conexión. A su lado, lo que la TV está descargando y subiendo en este momento (↓ y ↑, en Kbps o Mbps), medido cada segundo solo mientras Inicio está en pantalla; es el tráfico actual de la TV, no una prueba de velocidad. Debajo de la fecha va el clima actual, con un ícono, la temperatura (°C, o °F en Estados Unidos) y una palabra ("Despejado", "Parcialmente nublado", "Lluvia"). La TV no tiene GPS, así que su ubicación aproximada sale de su conexión a internet a través de [ipwho.is](https://ipwho.is/) una vez al día, y el clima de [Open-Meteo](https://open-meteo.com/) cada media hora. Ninguno necesita cuenta ni clave.
 
 ### Entradas
 

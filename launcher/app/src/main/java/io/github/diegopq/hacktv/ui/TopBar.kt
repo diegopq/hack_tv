@@ -46,6 +46,7 @@ import androidx.tv.material3.Surface
 import androidx.tv.material3.Text
 import io.github.diegopq.hacktv.R
 import io.github.diegopq.hacktv.data.Connection
+import io.github.diegopq.hacktv.data.Throughput
 import io.github.diegopq.hacktv.data.WeatherKind
 import io.github.diegopq.hacktv.data.WeatherNow
 import io.github.diegopq.hacktv.ui.theme.HackColors
@@ -55,6 +56,13 @@ import java.util.Date
 import java.util.Locale
 
 private val TAB_ARROWS = setOf(Key.DirectionLeft, Key.DirectionRight)
+
+/** Bits per second the way internet plans are sold: "850 Kbps", "12.4 Mbps", "105 Mbps". */
+private fun formatBits(bps: Long): String = when {
+    bps < 1_000_000 -> "${bps / 1_000} Kbps"
+    bps < 100_000_000 -> String.format(Locale.getDefault(), "%.1f Mbps", bps / 1_000_000.0)
+    else -> "${bps / 1_000_000} Mbps"
+}
 
 private val WeatherKind.icon: Int
     get() = when (this) {
@@ -86,6 +94,7 @@ private val WeatherKind.label: Int
 fun TopBar(
     tab: Tab,
     connection: Connection,
+    throughput: Throughput?,
     weather: WeatherNow?,
     onTabSelected: (Tab) -> Unit,
     onSearch: () -> Unit,
@@ -134,6 +143,14 @@ fun TopBar(
                 tint = if (connection == Connection.ETHERNET || connection == Connection.WIFI) HackColors.Muted else Color(0xFFFFB74D),
                 modifier = Modifier.size(15.dp),
             )
+            // What the TV is downloading and uploading right now, beside the icon.
+            if (throughput != null && (connection == Connection.ETHERNET || connection == Connection.WIFI)) {
+                Spacer(Modifier.width(6.dp))
+                Column {
+                    Text("↓ " + formatBits(throughput.downBps), fontSize = 8.5.sp, lineHeight = 10.sp, color = HackColors.Muted)
+                    Text("↑ " + formatBits(throughput.upBps), fontSize = 8.5.sp, lineHeight = 10.sp, color = HackColors.Muted)
+                }
+            }
             Spacer(Modifier.width(15.dp))
             Clock(weather)
         }
