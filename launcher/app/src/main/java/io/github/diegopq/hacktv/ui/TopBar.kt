@@ -193,7 +193,8 @@ private fun Clock(weather: WeatherNow?) {
         weather?.let { w ->
             Spacer(Modifier.height(3.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(painterResource(w.kind.icon), contentDescription = null, tint = HackColors.Muted, modifier = Modifier.size(12.dp))
+                // In its own colors: yellow sun, light clouds, blue rain.
+                Icon(painterResource(w.kind.icon), contentDescription = null, tint = Color.Unspecified, modifier = Modifier.size(14.dp))
                 Spacer(Modifier.width(5.dp))
                 Text(
                     "${w.temperature}° · ${stringResource(w.kind.label)}",
