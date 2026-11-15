@@ -200,7 +200,7 @@ Esta fila muestra las nuevas temporadas de las series que ves. Primero van las q
 
 Cada app sigue publicando filas de títulos para la pantalla de inicio de la TV ("canales de vista previa") aunque Google TV ya no las muestre: Netflix, Prime Video, Disney+, Apple TV, Mercado Play, Runtime y otras. Esta fila muestra unos cuantos de cada app por turnos, en el orden de Mis apps, sin repetir lo que ya está en las filas de arriba. OK abre el título directo en su app. El banner también usa estos enlaces: cuando la app destaca el título recomendado, **Ver en …** abre el título en vez del inicio de la app. No necesitan clave de TMDB, solo el permiso de Continuar viendo.
 
-Las versiones release se firman con tu clave local de depuración para poder instalarlas por adb. Configura una clave de firma real antes de publicar un APK.
+No hay APK publicados: cada quien compila el suyo desde el código, con su propio `.env`. Las versiones release se firman con tu clave local de depuración para poder instalarlas por adb.
 
 ## Configuración
 
@@ -292,8 +292,8 @@ Quiero acelerar mi Android TV y quitar lo que no uso. Está en mi red local con 
    - El retraso del volumen con una barra de sonido por HDMI-CEC/ARC viene de la barra, no de la TV; no intentes arreglarlo desactivando paquetes.
 
 5. Instala el launcher hack_tv
-   - Revisa https://github.com/diegopq/hack_tv/releases para ver si hay un APK. Si todavía no hay una versión publicada, detente aquí y dímelo.
-   - Si la hay, descárgala, instálala con "adb install", configúrala como app de inicio y guíame en la pantalla de la TV para dar los permisos que necesita (servicio de accesibilidad para los botones del control, guía de TV y acceso a notificaciones para "Reproducido recientemente"). No escribas contraseñas ni cuentas por mí.
+   - No hay un APK listo: compílalo desde el código. Clona https://github.com/diegopq/hack_tv, copia .env.example a .env (pídeme mi clave de la API de TMDB, o déjala vacía: el launcher funciona sin ella, sin recomendaciones ni nuevas temporadas) y sigue "Compilar e instalar el launcher" del README. Necesita un JDK 17 o más nuevo y el SDK de Android (Android Studio trae ambos); si no están instalados, dime qué falta.
+   - Instálalo con "adb install", configúralo como app de inicio y guíame en la pantalla de la TV para dar los permisos que necesita (servicio de accesibilidad para los botones del control, guía de TV y acceso a notificaciones para "Reproducido recientemente"). No escribas contraseñas ni cuentas por mí.
    - Prueba conmigo la pantalla de inicio y los botones del control, y agrega cualquier cambio nuevo al script para revertir.
 
 Al final, dame un resumen: qué cambiaste, cuánta memoria libre hay comparado con antes y cómo deshacer todo con el script para revertir.

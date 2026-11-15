@@ -200,7 +200,7 @@ This row shows new seasons of the series you watch. First come the ones the apps
 
 Every app keeps publishing rows of titles for the TV's home screen ("preview channels") even though Google TV no longer shows them: Netflix, Prime Video, Disney+, Apple TV, Mercado Play, Runtime and others. This row shows a few from each app in turn, in the order of My apps, leaving out what the rows above already show. OK opens the title right in its app. The banner uses these links too: when the app features the recommended title, **Watch on …** opens the title instead of the app's home. They need no TMDB key, only the Continue watching permission.
 
-Release builds are signed with your local debug key, so they install over adb. Set up a real signing key before publishing an APK.
+There are no published APKs: everyone builds their own from the source, with their own `.env`. Release builds are signed with your local debug key, so they install over adb.
 
 ## Configuration
 
@@ -292,8 +292,8 @@ I want to speed up my Android TV and remove things I don't use. It's on my local
    - Volume lag through a soundbar on HDMI-CEC/ARC comes from the soundbar, not the TV; don't try to fix it by disabling packages.
 
 5. Install the hack_tv launcher
-   - Check https://github.com/diegopq/hack_tv/releases for an APK. If there isn't a release yet, stop here and tell me.
-   - If there is one, download it, install it with "adb install", set it as the home app, and walk me through the permissions it needs (accessibility service for the remote buttons, TV listings and notification access for "Recently played") on the TV screen. Don't enter any passwords or accounts for me.
+   - There's no ready-made APK: build it from the source. Clone https://github.com/diegopq/hack_tv, copy .env.example to .env (ask me for my TMDB API key, or leave it empty: the launcher works without it, with no recommendations or new seasons), and follow "Build and install the launcher" in the README. It needs a JDK 17 or newer and the Android SDK (Android Studio brings both); if they aren't installed, tell me what's missing.
+   - Install it with "adb install", set it as the home app, and walk me through the permissions it needs (accessibility service for the remote buttons, TV listings and notification access for "Recently played") on the TV screen. Don't enter any passwords or accounts for me.
    - Test the home screen and remote buttons with me, and add any new changes to the revert script.
 
 At the end, give me a summary: what you changed, how much free memory there is compared to before, and how to undo everything with the revert script.
