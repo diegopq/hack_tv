@@ -145,6 +145,12 @@ class LauncherViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
+    /** Remembers what's connected to an input ("Xbox"), or forgets it with null. */
+    fun renameInput(inputId: String, name: String?) {
+        Inputs.setName(getApplication(), inputId, name)
+        refreshInputs()
+    }
+
     fun refreshInputs() {
         viewModelScope.launch(Dispatchers.IO) { _inputs.value = Inputs.load(getApplication()) }
     }

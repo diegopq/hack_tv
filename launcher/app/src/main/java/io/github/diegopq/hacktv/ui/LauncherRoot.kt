@@ -164,6 +164,7 @@ fun LauncherRoot(viewModel: LauncherViewModel, navigation: Flow<Tab>, initialTab
                     onHide = { viewModel.setHidden(it, true) },
                     onRemoveRecent = viewModel::removeRecent,
                     onRemoveNewSeason = viewModel::removeNewSeason,
+                    onRenameInput = viewModel::renameInput,
                 )
                 Tab.APPS -> AppsScreen(
                     apps = apps,

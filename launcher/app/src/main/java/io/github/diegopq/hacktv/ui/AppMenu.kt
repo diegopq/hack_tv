@@ -44,7 +44,9 @@ import androidx.tv.material3.ClickableSurfaceDefaults
 import androidx.tv.material3.Surface
 import androidx.tv.material3.Text
 import io.github.diegopq.hacktv.R
+import io.github.diegopq.hacktv.data.InputDevice
 import io.github.diegopq.hacktv.data.LauncherApp
+import io.github.diegopq.hacktv.data.TvInputItem
 import io.github.diegopq.hacktv.data.RecentItem
 import io.github.diegopq.hacktv.ui.theme.HackColors
 
@@ -90,6 +92,20 @@ fun RecentMenu(item: RecentItem, app: LauncherApp?, onRemove: () -> Unit, onDism
         thumb = app?.banner ?: app?.icon,
         title = item.title,
         items = listOf(remove to { onDismiss(); onRemove() }),
+        onDismiss = onDismiss,
+    )
+}
+
+/** The menu that opens when OK is held on an input: what's connected to it, or just the port's name. */
+@Composable
+fun InputMenu(input: TvInputItem, onChoose: (String?) -> Unit, onDismiss: () -> Unit) {
+    val names = InputDevice.entries.map { it.brand ?: stringResource(it.labelRes) }
+    val original = stringResource(R.string.input_original_name, input.portLabel)
+    ActionMenu(
+        thumb = null,
+        title = stringResource(R.string.input_menu_title, input.portLabel),
+        items = names.map { name -> name to { onDismiss(); onChoose(name) } } +
+            (original to { onDismiss(); onChoose(null) }),
         onDismiss = onDismiss,
     )
 }

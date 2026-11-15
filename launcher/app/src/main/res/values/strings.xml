@@ -89,6 +89,10 @@
     <string name="sc_language">Language</string>
     <string name="sc_language_sub">English</string>
     <string name="input_sub">Input</string>
+    <string name="input_menu_title">What\'s on %1$s?</string>
+    <string name="input_original_name">Just \"%1$s\"</string>
+    <string name="device_set_top">Cable box</string>
+    <string name="device_soundbar">Soundbar</string>
 
     <!-- Remote buttons -->
     <string name="keys_service_label">hack_tv remote buttons</string>

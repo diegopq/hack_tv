@@ -66,6 +66,7 @@ import androidx.compose.ui.unit.sp
 import androidx.tv.material3.Text
 import io.github.diegopq.hacktv.R
 import io.github.diegopq.hacktv.data.AppsRepository
+import io.github.diegopq.hacktv.data.InputDevice
 import io.github.diegopq.hacktv.data.Inputs
 import io.github.diegopq.hacktv.data.LauncherApp
 import io.github.diegopq.hacktv.data.AppFeatured
@@ -152,6 +153,7 @@ fun HomeScreen(
     onHide: (String) -> Unit,
     onRemoveRecent: (RecentItem) -> Unit,
     onRemoveNewSeason: (String) -> Unit,
+    onRenameInput: (String, String?) -> Unit,
 ) {
     val context = LocalContext.current
     // A random pick of titles from every installed service, new each time Home is shown;
@@ -236,6 +238,10 @@ fun HomeScreen(
     // "New in your apps" works the same way: artwork behind Home, hold OK to remove a card.
     var focusedNew by remember { mutableStateOf<NewSeason?>(null) }
     var focusedFeatured by remember { mutableStateOf<FeaturedItem?>(null) }
+    // Hold OK on an input to say what's connected to it ("Xbox").
+    var menuInput by remember { mutableStateOf<TvInputItem?>(null) }
+    var pendingInputFocus by remember { mutableStateOf<String?>(null) }
+    val inputRequesters = remember { mutableMapOf<String, FocusRequester>() }
     val featuredRowState = rememberLazyListState()
     val firstFeatured = remember { FocusRequester() }
     var menuNew by remember { mutableStateOf<NewSeason?>(null) }
@@ -518,15 +524,18 @@ fun HomeScreen(
                     state = inputsRowState,
                     contentPadding = RowPadding,
                     horizontalArrangement = Arrangement.spacedBy(15.dp),
-                    modifier = Modifier.entersAtFirst(firstInput, inputsRowState, scope),
+                    modifier = Modifier.entersAtFirst(firstInput, inputsRowState, scope, keepScroll = { menuInput != null }),
                 ) {
                     itemsIndexed(inputs, key = { _, input -> input.id }) { i, input ->
+                        // "Xbox" over "HDMI 4" once something names the device; just the port otherwise.
                         GlassTile(
-                            icon = R.drawable.ic_hdmi,
+                            icon = if (InputDevice.isConsoleName(input.label)) R.drawable.ic_gamepad else R.drawable.ic_hdmi,
                             title = input.label,
-                            subtitle = stringResource(R.string.input_sub),
+                            subtitle = if (input.isNamed) input.portLabel else stringResource(R.string.input_sub),
                             onClick = { onOpen(Inputs.switchIntent(input)) },
-                            modifier = TileSize.then(if (i == 0) Modifier.focusRequester(firstInput) else Modifier),
+                            onLongClick = { menuInput = input },
+                            modifier = TileSize.then(if (i == 0) Modifier.focusRequester(firstInput) else Modifier)
+                                .focusRequester(inputRequesters.getOrPut(input.id) { FocusRequester() }),
                         )
                     }
                 }
@@ -593,6 +602,22 @@ fun HomeScreen(
                 pendingRecentFocus = item.id
             },
         )
+    }
+    menuInput?.let { input ->
+        InputMenu(
+            input = input,
+            onChoose = { name -> onRenameInput(input.id, name) },
+            onDismiss = {
+                menuInput = null
+                pendingInputFocus = input.id
+            },
+        )
+    }
+    LaunchedEffect(pendingInputFocus, inputs) {
+        val target = pendingInputFocus ?: return@LaunchedEffect
+        delay(50)   // let the dialog close first
+        runCatching { inputRequesters[target]?.requestFocus() }
+        pendingInputFocus = null
     }
     detailFor?.let { r ->
         DetailPage(

@@ -30,6 +30,7 @@ It started as a way to speed up and clean up a Hisense Android TV (Android 12, M
   - [Make it the home screen](#make-it-the-home-screen)
   - [Move and hide apps](#move-and-hide-apps)
   - [Recommendations](#recommendations)
+  - [Inputs](#inputs)
   - [Recently played](#recently-played)
   - [New in your apps](#new-in-your-apps)
   - [Featured in your apps](#featured-in-your-apps)
@@ -47,7 +48,7 @@ It started as a way to speed up and clean up a Hisense Android TV (Android 12, M
 |---|---|
 | UI design (HTML mockup) | ✅ Done: [`diseno/maqueta.html`](diseno/maqueta.html) |
 | Revert script for the TV optimizations | ✅ Done: [`revert_tv.sh`](revert_tv.sh) |
-| Android launcher app | 🚧 v0.13 in [`launcher/`](launcher/): Home with the recommendations banner (TMDB; without a key it spotlights the focused app), remote shortcut buttons, your apps (move and hide them), Recently played, HDMI inputs and settings shortcuts, the All apps and Settings pages, English and Spanish |
+| Android launcher app | 🚧 v0.14 in [`launcher/`](launcher/): Home with the recommendations banner (TMDB; without a key it spotlights the focused app), remote shortcut buttons, your apps (move and hide them), Recently played, HDMI inputs and settings shortcuts, the All apps and Settings pages, English and Spanish |
 
 ## Planned features
 
@@ -163,6 +164,10 @@ Apps installed later go at the end of the row.
 ### Recommendations
 
 With `TMDB_API_KEY` set in `.env`, the banner shows new releases on the streaming apps installed on the TV first (movies from the last two months and series that premiered in the last three, marked **New on …**), then popular movies and series from the last three years, in the TV's language, in the variant of its country (Spanish outside Spain uses TMDB's Latin American Spanish, so "Deadpool & Wolverine" rather than Spain's "Deadpool y Lobezno"). Services are detected automatically: the launcher downloads TMDB's list of streaming services for your country and matches it against the names of your installed apps, so Mercado Play, Runtime, Pluto TV or MUBI show up on their own. A short built-in list covers apps whose name differs from TMDB's (Prime Video, HBO Max). Services with a small or classic catalog fall back to their popular titles of any year. Apps without a TMDB catalog (YouTube, Spotify) don't appear. Only services whose app is installed are used, and the banner shows a random mix of up to ten titles that takes turns between them, new each time you open Home. Results are cached for six hours. The country comes from the TV's time zone (America/Mexico_City means Mexico), because the language setting often names another country (`es-US` on a TV in Mexico). Set `TMDB_REGION` only to force a different country. **More info** opens the title's own page: its logo, year, seasons or running time, age rating for your country, TMDB score, synopsis, creators or director, cast with photos and, for series, every season. **Watch on …** opens it in its app and **Trailer** plays it on YouTube; Back returns to the banner where you left it. The key is built into the APK, so don't share your APK publicly.
+
+### Inputs
+
+The Inputs row lists the TV's HDMI ports. Hold OK on one to say what's connected (Xbox, PlayStation, Nintendo Switch, Apple TV, Chromecast, Fire TV, cable box, PC or soundbar): the card then shows "Xbox" over "HDMI 4", with a controller icon for consoles. A name given in the TV's own input settings, or one a device announces over HDMI-CEC, shows up on its own.
 
 ### Recently played
 
