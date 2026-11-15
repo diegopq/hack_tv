@@ -54,6 +54,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -733,7 +734,17 @@ fun AppsScreen(
             itemsIndexed(apps, key = { _, app -> app.packageName }) { i, app ->
                 val isHidden = app.packageName in hidden
                 // Apps hidden from Home stay here, dimmed, so they can be shown again.
-                Column(Modifier.alpha(if (isHidden) 0.5f else 1f)) {
+                // Dimmed without clipping (Modifier.alpha() clips to the cell, which cut the focused tile's
+                // edges and outline once it grew), and fully visible while focused, white outline included.
+                var focused by remember { mutableStateOf(false) }
+                Column(
+                    Modifier
+                        .onFocusChanged { focused = it.hasFocus }
+                        .graphicsLayer {
+                            alpha = if (isHidden && !focused) 0.5f else 1f
+                            compositingStrategy = CompositingStrategy.ModulateAlpha
+                        },
+                ) {
                     AppTile(
                         app = app,
                         onClick = { onOpen(AppsRepository.launchIntent(context, app)) },
