@@ -48,7 +48,7 @@ Empezó como una forma de acelerar y limpiar una TV Hisense con Android TV (Andr
 |---|---|
 | Diseño de la interfaz (maqueta HTML) | ✅ Listo: [`diseno/maqueta.html`](diseno/maqueta.html) |
 | Script para revertir las optimizaciones de la TV | ✅ Listo: [`revert_tv.sh`](revert_tv.sh) |
-| App launcher para Android | 🚧 v0.14 en [`launcher/`](launcher/): Inicio con el banner de recomendaciones (TMDB; sin clave muestra la app enfocada), botones de acceso directo del control, tus apps (muévelas y ocúltalas), Reproducido recientemente, entradas HDMI y accesos a ajustes, las páginas Todas las apps y Ajustes, en español e inglés |
+| App launcher para Android | 🚧 v0.15 en [`launcher/`](launcher/): Inicio con el banner de recomendaciones (TMDB; sin clave muestra la app enfocada), botones de acceso directo del control, tus apps (muévelas y ocúltalas), Reproducido recientemente, entradas HDMI y accesos a ajustes, las páginas Todas las apps y Ajustes, en español e inglés |
 
 ## Funciones planeadas
 
@@ -137,7 +137,7 @@ Recomendado: deja que el launcher mantenga el servicio activo. Algunos firmwares
 adb shell pm grant io.github.diegopq.hacktv android.permission.WRITE_SECURE_SETTINGS
 ```
 
-Los botones del control siempre están activos: el launcher no tiene un interruptor para ellos. Las teclas enviadas con `adb shell input keyevent` no pasan por los servicios de accesibilidad, así que prueba los botones con el control real.
+Los botones del control siempre están activos: el launcher no tiene un interruptor para ellos. El mismo servicio muestra el volumen con número justo debajo de la barra de volumen de la TV: con una barra de sonido por HDMI-CEC, la barra de Android TV no muestra el nivel, pero la barra de sonido lo reporta (de 0 a 100) y el launcher lo muestra un momento cada vez que cambia. Los botones de volumen siguen siendo de la TV. Las teclas enviadas con `adb shell input keyevent` no pasan por los servicios de accesibilidad, así que prueba los botones con el control real.
 
 ### Hacerlo la pantalla de inicio
 

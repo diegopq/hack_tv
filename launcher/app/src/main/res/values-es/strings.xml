@@ -87,7 +87,7 @@
     <string name="device_soundbar">Barra de sonido</string>
 
     <string name="keys_service_label">Botones del control de hack_tv</string>
-    <string name="keys_service_description">Hace que los botones de acceso directo del control funcionen con hack_tv: Ajustes, lista de apps, YouTube, Prime Video y Disney+. Solo reacciona a esos botones y no lee nada de la pantalla.</string>
+    <string name="keys_service_description">Hace que los botones de acceso directo del control funcionen con hack_tv: Ajustes, lista de apps, YouTube, Prime Video y Disney+, y muestra el volumen con número. Solo reacciona a esos botones y no lee nada de la pantalla.</string>
 
     <!-- Reproducido recientemente -->
     <string name="history_service_label">hack_tv reproducido recientemente</string>

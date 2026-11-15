@@ -48,7 +48,7 @@ It started as a way to speed up and clean up a Hisense Android TV (Android 12, M
 |---|---|
 | UI design (HTML mockup) | ✅ Done: [`diseno/maqueta.html`](diseno/maqueta.html) |
 | Revert script for the TV optimizations | ✅ Done: [`revert_tv.sh`](revert_tv.sh) |
-| Android launcher app | 🚧 v0.14 in [`launcher/`](launcher/): Home with the recommendations banner (TMDB; without a key it spotlights the focused app), remote shortcut buttons, your apps (move and hide them), Recently played, HDMI inputs and settings shortcuts, the All apps and Settings pages, English and Spanish |
+| Android launcher app | 🚧 v0.15 in [`launcher/`](launcher/): Home with the recommendations banner (TMDB; without a key it spotlights the focused app), remote shortcut buttons, your apps (move and hide them), Recently played, HDMI inputs and settings shortcuts, the All apps and Settings pages, English and Spanish |
 
 ## Planned features
 
@@ -137,7 +137,7 @@ Recommended: let the launcher keep the service on. Some firmware (this Hisense, 
 adb shell pm grant io.github.diegopq.hacktv android.permission.WRITE_SECURE_SETTINGS
 ```
 
-The remote buttons are always on: there's no switch for them in the launcher. Keys sent with `adb shell input keyevent` don't go through accessibility services, so test the buttons with the real remote.
+The remote buttons are always on: there's no switch for them in the launcher. The same service shows the volume as a number right under the TV's own volume bar: with a soundbar over HDMI-CEC, Android TV's bar has no level, but the soundbar reports it (0 to 100) and the launcher shows it for a moment whenever it changes. The volume buttons themselves stay with the TV. Keys sent with `adb shell input keyevent` don't go through accessibility services, so test the buttons with the real remote.
 
 ### Make it the home screen
 

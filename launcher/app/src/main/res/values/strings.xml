@@ -96,7 +96,7 @@
 
     <!-- Remote buttons -->
     <string name="keys_service_label">hack_tv remote buttons</string>
-    <string name="keys_service_description">Makes the remote\'s shortcut buttons work with hack_tv: Settings, app list, YouTube, Prime Video and Disney+. It only reacts to those buttons and doesn\'t read anything on screen.</string>
+    <string name="keys_service_description">Makes the remote\'s shortcut buttons work with hack_tv: Settings, app list, YouTube, Prime Video and Disney+, and shows the volume as a number. It only reacts to those buttons and doesn\'t read anything on screen.</string>
 
     <!-- Recently played -->
     <string name="history_service_label">hack_tv recently played</string>
