@@ -18,6 +18,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.CompositingStrategy
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -181,22 +187,28 @@ fun MediaTile(
             focusedContentColor = HackColors.Text,
         ),
     ) {
-        Box(Modifier.fillMaxSize()) {
-            app?.banner?.let {
+        // The card is kept in its own cached layer: growing on focus only scales that image, instead of
+        // drawing the artwork, the gradient and the text again on every frame of the animation.
+        var artShown by remember(item.imageUri) { mutableStateOf(false) }
+        Box(Modifier.fillMaxSize().graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }) {
+            // The app's banner only while the artwork loads, or when it fails: under it, it was drawn for nothing.
+            if (!artShown) app?.banner?.let {
                 Image(it, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize().alpha(0.6f))
             }
             if (item.imageUri != null) {
-                // Drawn over the banner: if the artwork can't load, the banner stays.
                 AsyncImage(
                     model = ImageRequest.Builder(context).data(item.imageUri).size(400, 225).build(),
                     contentDescription = null,
                     contentScale = ContentScale.Crop,
+                    onSuccess = { artShown = true },
+                    onError = { artShown = false },
                     modifier = Modifier.fillMaxSize(),
                 )
             }
+            // Darkens only the lower part, where the text is.
             Box(
-                Modifier.fillMaxSize().background(
-                    Brush.verticalGradient(0f to Color.Transparent, 0.3f to Color(0x33000000), 0.55f to Color(0x59000000), 1f to Color(0xE0000000)),
+                Modifier.align(Alignment.BottomStart).fillMaxWidth().fillMaxHeight(0.7f).background(
+                    Brush.verticalGradient(0f to Color.Transparent, 0.36f to Color(0x59000000), 1f to Color(0xE0000000)),
                 ),
             )
             if (item.imageUri != null && app?.banner != null) {

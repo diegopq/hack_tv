@@ -31,6 +31,8 @@ import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.CompositingStrategy
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -135,8 +137,14 @@ fun LauncherRoot(viewModel: LauncherViewModel, navigation: Flow<Tab>, initialTab
 
     CompositionLocalProvider(LocalContentColor provides HackColors.Text) {
         Box(Modifier.fillMaxSize().background(HackColors.Background)) {
+            // The artwork, its glow and the dark gradients behind every page are drawn once into a cached
+            // layer: redrawing five full-screen gradients for every focus move took the TV's GPU ~70 ms a
+            // frame (about 11 fps). Now each frame only copies the cached image, until the artwork changes.
+            // The gradients over the artwork never change: they live in a cached layer that is never redrawn.
             Backdrop(content = if (tab == Tab.HOME) backdrop else null)
-            Scrims()
+            Box(Modifier.fillMaxSize().graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }) {
+                Scrims()
+            }
             when (tab) {
                 Tab.HOME -> HomeScreen(
                     homeApps = homeApps,
@@ -201,7 +209,7 @@ sealed interface BackdropContent {
 @Composable
 private fun Backdrop(content: BackdropContent?) {
     val context = LocalContext.current
-    Crossfade(targetState = content, animationSpec = tween(800), label = "backdrop") { current ->
+    Crossfade(targetState = content, animationSpec = tween(500), label = "backdrop") { current ->
         when (current) {
             is BackdropContent.Image -> AsyncImage(
                 model = ImageRequest.Builder(context).data(current.url).size(1280, 720).build(),
@@ -220,8 +228,9 @@ private fun Backdrop(content: BackdropContent?) {
 @Composable
 private fun Glow(color: Color) {
     val deep = lerp(color, Color.Black, 0.65f)
+    // Gradients cost the TV's GPU much more than an image: drawn once into a cached layer.
     Box(
-        Modifier.fillMaxSize().drawBehind {
+        Modifier.fillMaxSize().graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }.drawBehind {
             drawRect(Color(0xFF07080B))
             drawRect(
                 Brush.radialGradient(

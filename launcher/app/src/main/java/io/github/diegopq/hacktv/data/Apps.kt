@@ -115,10 +115,13 @@ object AppsRepository {
     private const val ICON_SIZE = 128
 }
 
-/** Draws a drawable into a bitmap no larger than the given size, keeping banners sharp but small in memory. */
+/**
+ * Draws a drawable into a bitmap no larger than the size it's shown at (a 156x88 dp tile is 312x176 px on
+ * a 1080p TV): twice that used about four times the memory for every app, for no visible difference.
+ */
 private fun Drawable.renderBitmap(maxW: Int, maxH: Int): Bitmap? {
-    val w = intrinsicWidth.takeIf { it > 0 }?.coerceAtMost(maxW * 2) ?: maxW
-    val h = intrinsicHeight.takeIf { it > 0 }?.coerceAtMost(maxH * 2) ?: maxH
+    val w = intrinsicWidth.takeIf { it > 0 }?.coerceAtMost(maxW) ?: maxW
+    val h = intrinsicHeight.takeIf { it > 0 }?.coerceAtMost(maxH) ?: maxH
     return runCatching { toBitmap(w, h, Bitmap.Config.ARGB_8888) }.getOrNull()
 }
 

@@ -33,6 +33,7 @@ import io.github.diegopq.hacktv.data.TvInputItem
 import io.github.diegopq.hacktv.keys.RemoteKeys
 import io.github.diegopq.hacktv.media.PlayHistory
 import coil3.SingletonImageLoader
+import coil3.request.CachePolicy
 import coil3.request.ImageRequest
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -201,8 +202,14 @@ class LauncherViewModel(application: Application) : AndroidViewModel(application
     private fun prefetchArtwork(uris: List<String>) {
         val context = getApplication<Application>()
         val loader = SingletonImageLoader.get(context)
+        // Only downloaded to the disk cache: decoding them into memory ahead of time filled the memory cache
+        // with cards that may never be shown. Showing one then only decodes a small local file.
         uris.forEach { uri ->
-            loader.enqueue(ImageRequest.Builder(context).data(uri).size(400, 225).build())
+            loader.enqueue(
+                ImageRequest.Builder(context).data(uri).size(400, 225)
+                    .memoryCachePolicy(CachePolicy.DISABLED)
+                    .build(),
+            )
         }
     }
 

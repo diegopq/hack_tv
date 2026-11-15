@@ -296,6 +296,9 @@ fun HomeScreen(
 
     LaunchedEffect(rec?.imageUrl, spotlight?.packageName, showRecommendations, focusedRecent?.imageUri, focusedNew?.imageUrl, focusedFeatured?.imageUri) {
         val recentArt = focusedRecent?.imageUri ?: focusedNew?.imageUrl ?: focusedFeatured?.imageUri
+        // A card's artwork only replaces the background once the focus rests on it: moving along a row
+        // started a full-screen crossfade on every press, which the TV's GPU couldn't keep up with.
+        if (recentArt != null) delay(350)
         when {
             recentArt != null -> onBackdrop(BackdropContent.Image(recentArt))
             rec != null -> onBackdrop(BackdropContent.Image(rec.imageUrl))
